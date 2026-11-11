@@ -579,3 +579,26 @@ body.is-dragging-event, body.is-dragging-event * { cursor: grabbing !important; 
   .event-drawer h2 { max-width: 240px; }
   .palette-backdrop { padding-top: 8vh; }
 }
+
+/* ===================== iPhone mockup (desktop presentation) ===================== */
+.mockup-page { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 24px; overflow: hidden; background: radial-gradient(circle at 50% 38%, #fbfaf6 0, #f1f0ea 55%, #e9e8e1 100%); }
+.mockup-stage { position: relative; flex: 0 0 auto; }
+.mockup-phone { position: absolute; top: 0; left: 0; box-sizing: border-box; padding: 14px; border-radius: 68px; background: #1b1b1d; transform-origin: top left; box-shadow: inset 0 0 0 2px #3a3a3e, inset 0 0 0 5px #0d0d0e, 0 50px 90px -30px rgba(40, 38, 30, .45), 0 30px 60px -40px rgba(40, 38, 30, .5); }
+.mockup-button { position: absolute; width: 4px; border-radius: 2px; background: #2a2a2d; }
+.mockup-action { top: 150px; left: -3px; height: 32px; }
+.mockup-volume-up { top: 205px; left: -3px; height: 60px; }
+.mockup-volume-down { top: 280px; left: -3px; height: 60px; }
+.mockup-power { top: 230px; right: -3px; height: 96px; }
+.mockup-screen { position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 55px; background: #fbfaf6; }
+.mockup-status { position: relative; display: flex; flex: 0 0 54px; align-items: center; justify-content: space-between; padding: 6px 30px 0 46px; color: #111; }
+.mockup-time { font: 600 16px/1 -apple-system, 'SF Pro Text', 'DM Sans', sans-serif; letter-spacing: -.2px; }
+.mockup-island { position: absolute; top: 11px; left: 50%; width: 122px; height: 35px; border-radius: 20px; background: #000; transform: translateX(-50%); }
+.mockup-status-icons { display: flex; align-items: center; gap: 6px; fill: currentColor; color: #111; }
+.mockup-app { display: block; flex: 1 1 auto; width: 100%; min-height: 0; border: 0; background: #f7f6f1; }
+.mockup-home { display: flex; flex: 0 0 22px; align-items: center; justify-content: center; background: #f7f6f1; }
+.mockup-home span { width: 134px; height: 5px; border-radius: 3px; background: #111; }
+.mockup-caption { color: #8b8980; font-size: 13px; text-align: center; }
+.mockup-caption strong { color: #4a4943; font-family: 'Manrope', sans-serif; font-weight: 800; }
+/* Inside the phone mockup: hide desktop scrollbars so scrolling looks native */
+html.embedded, html.embedded * { scrollbar-width: none; }
+html.embedded ::-webkit-scrollbar { display: none; }
