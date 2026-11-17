@@ -122,7 +122,7 @@ export const TR: Record<string, string> = {
   "Continue": "Devam et",
   "Create account": "Hesap oluştur",
   "Prototype tip: any email signs you in with a sample week.": "Prototip ipucu: herhangi bir e-posta seni örnek bir haftayla giriş yaptırır.",
-  "New to studyflow?": "studyflow’da yeni misin?",
+  "New to YuStudy?": "YuStudy’de yeni misin?",
   "Already have an account?": "Zaten hesabın var mı?",
   "Create an account": "Hesap oluştur",
   "By continuing, you agree to our Terms and Privacy Policy.": "Devam ederek Kullanım Koşulları’nı ve Gizlilik Politikası’nı kabul etmiş olursun.",
@@ -259,7 +259,7 @@ export const TR: Record<string, string> = {
 
   // ---- Planner
   "Study session": "Çalışma",
-  "Suggested by studyflow": "studyflow önerisi",
+  "Suggested by YuStudy": "YuStudy önerisi",
   "Previous week": "Önceki hafta",
   "Next week": "Gelecek hafta",
   "This week": "Bu hafta",

@@ -24,7 +24,8 @@ import type {
 
 import { setLang, t, type Lang } from "./i18n"
 
-const STORAGE_KEY = "studyflow:v1"
+const STORAGE_KEY = "yustudy:v1"
+const LEGACY_STORAGE_KEY = "studyflow:v1" // before the rename to YuStudy
 const EMPTY: AppData = {
   language: null,
   profile: null,
@@ -36,7 +37,9 @@ const EMPTY: AppData = {
 
 function loadData(): AppData {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const raw =
+      window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_STORAGE_KEY)
     if (!raw) return EMPTY
     const parsed = JSON.parse(raw) as Partial<AppData>
     if (!parsed || !Array.isArray(parsed.events) || !Array.isArray(parsed.tasks))

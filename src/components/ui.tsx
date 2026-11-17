@@ -10,11 +10,11 @@ export function Logo({ onClick }: { onClick?: () => void }) {
         <span />
         <span />
       </span>
-      <span>studyflow</span>
+      <span>YuStudy</span>
     </>
   )
   return onClick ? (
-    <button className="brand" type="button" onClick={onClick} aria-label="Studyflow home">
+    <button className="brand" type="button" onClick={onClick} aria-label="YuStudy home">
       {inner}
     </button>
   ) : (

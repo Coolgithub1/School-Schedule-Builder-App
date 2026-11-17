@@ -175,7 +175,7 @@ export function PlannerScreen() {
       {
         type: "study",
         title: t("Study session"),
-        detail: t("Suggested by studyflow"),
+        detail: t("Suggested by YuStudy"),
         day: suggestion.day,
         start: suggestion.start,
         duration: suggestion.duration,

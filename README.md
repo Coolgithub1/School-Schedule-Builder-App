@@ -1,12 +1,12 @@
-# studyflow — School Schedule Builder
+# YuStudy — School Schedule Builder
 
-A weekly planner for students: add your classes, set a study-hours goal and your extracurriculars, and studyflow builds a balanced week around them.
+A weekly planner for students: add your classes, set a study-hours goal and your extracurriculars, and YuStudy builds a balanced week around them.
 
 **Live app:** https://coolgithub1.github.io/School-Schedule-Builder-App/
 
-**Case study presentation (PDF):** [Download studyflow-case-study.pdf](https://github.com/Coolgithub1/School-Schedule-Builder-App/releases/download/case-study-v1/studyflow-case-study.pdf) — UI/UX case study with personas, user flow, before/after user testing, and the design system.
+**Case study presentation (PDF):** [Download yustudy-case-study.pdf](https://github.com/Coolgithub1/School-Schedule-Builder-App/releases/download/case-study-v1/yustudy-case-study.pdf) — UI/UX case study with personas, user flow, before/after user testing, and the design system.
 
-**Figma wireframe board:** [studyflow — Wireframe prototype](https://www.figma.com/design/oUxlwuU0uSRaPHtQQ9j0IW/studyflow-%E2%80%94-Wireframe-prototype?node-id=0-1&t=Hcrr8lLBTFI7setb-1)
+**Figma wireframe board:** [YuStudy — Wireframe prototype](https://www.figma.com/design/oUxlwuU0uSRaPHtQQ9j0IW/YuStudy-%E2%80%94-Wireframe-prototype?node-id=0-1&t=Hcrr8lLBTFI7setb-1)
 
 **Figma prototype:** [School Schedule Builder App (Figma Make)](https://www.figma.com/make/xNpQLGBq0cOlTiwxspd4nJ/School-Schedule-Builder-App?t=RrSOYabn4f7Uehex-1)
 

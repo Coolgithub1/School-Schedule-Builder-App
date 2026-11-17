@@ -79,7 +79,7 @@ export function PhoneMockup() {
               <span className="mockup-island" />
               <StatusIcons />
             </div>
-            <iframe className="mockup-app" src={appUrl} title="studyflow app preview" />
+            <iframe className="mockup-app" src={appUrl} title="YuStudy app preview" />
             <div className="mockup-home">
               <span />
             </div>
@@ -87,7 +87,7 @@ export function PhoneMockup() {
         </div>
       </div>
       <p className="mockup-caption">
-        <strong>studyflow</strong> · interactive preview — tap around, it’s the real app.
+        <strong>YuStudy</strong> · interactive preview — tap around, it’s the real app.
       </p>
     </div>
   )

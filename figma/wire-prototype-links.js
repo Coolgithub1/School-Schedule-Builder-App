@@ -1,6 +1,6 @@
-// studyflow — wire up the wireframe prototype board
+// YuStudy — wire up the wireframe prototype board
 //
-// Run this inside the "studyflow — Wireframe prototype" Figma file, on the
+// Run this inside the "YuStudy — Wireframe prototype" (originally "studyflow — Wireframe prototype") Figma file, on the
 // "🗺 Prototype board" page, using the free "Scripter" community plugin
 // (Plugins → Scripter → paste this → Run).
 //

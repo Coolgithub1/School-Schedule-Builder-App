@@ -109,7 +109,7 @@ export function AuthScreen() {
           <p className="auth-hint">{t("Prototype tip: any email signs you in with a sample week.")}</p>
         )}
         <p className="auth-switch">
-          {mode === "login" ? t("New to studyflow?") : t("Already have an account?")}{" "}
+          {mode === "login" ? t("New to YuStudy?") : t("Already have an account?")}{" "}
           <button type="button" onClick={switchMode}>
             {mode === "login" ? t("Create an account") : t("Log in")}
           </button>
