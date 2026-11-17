@@ -1,7 +1,9 @@
 import { useState } from "react"
 import { LogOut, RotateCcw } from "lucide-react"
+import { t } from "../lib/i18n"
 import { useStore } from "../lib/store"
 import type { FocusPref } from "../lib/types"
+import { LanguageSwitch } from "./Language"
 import { Modal, Switch } from "./ui"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -14,36 +16,41 @@ export function SettingsModal() {
   const close = () => setSettingsOpen(false)
 
   const save = () => {
-    if (!form.name.trim()) return setError("Your name can’t be empty.")
-    if (!EMAIL_RE.test(form.email.trim())) return setError("Enter a valid email address.")
+    if (!form.name.trim()) return setError(t("Your name can’t be empty."))
+    if (!EMAIL_RE.test(form.email.trim())) return setError(t("Enter a valid email address."))
     updateProfile({ ...form, name: form.name.trim(), email: form.email.trim() })
-    toast("Settings saved")
+    toast(t("Settings saved"))
     close()
   }
 
   return (
     <Modal
-      kicker="SETTINGS"
-      title="Your profile"
+      kicker={t("SETTINGS")}
+      title={t("Your profile")}
       onClose={close}
       footer={
         <>
           <button className="button button-ghost" onClick={signOut}>
-            <LogOut size={15} /> Log out
+            <LogOut size={15} /> {t("Log out")}
           </button>
           <span className="footer-spacer" />
           <button className="button button-ghost" onClick={close}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button className="button button-primary" onClick={save}>
-            Save
+            {t("Save")}
           </button>
         </>
       }
     >
+      <div className="field">
+        {t("App language")}
+        <LanguageSwitch />
+      </div>
+
       <div className="form-row">
         <label className="field">
-          Full name
+          {t("Full name")}
           <input
             className="text-input"
             value={form.name}
@@ -51,7 +58,7 @@ export function SettingsModal() {
           />
         </label>
         <label className="field">
-          Email
+          {t("Email")}
           <input
             className="text-input"
             type="email"
@@ -63,7 +70,7 @@ export function SettingsModal() {
 
       <label className="field">
         <span className="field-split">
-          Weekly study goal <b>{form.studyGoal} hours</b>
+          {t("Weekly study goal")} <b>{t("{n} hours", { n: form.studyGoal })}</b>
         </span>
         <input
           type="range"
@@ -75,7 +82,7 @@ export function SettingsModal() {
       </label>
 
       <div className="field">
-        Best time to focus
+        {t("Best time to focus")}
         <div className="segmented two">
           {(["morning", "evening"] as FocusPref[]).map((pref) => (
             <button
@@ -84,7 +91,7 @@ export function SettingsModal() {
               className={form.focusPref === pref ? "active" : ""}
               onClick={() => setForm({ ...form, focusPref: pref })}
             >
-              {pref === "morning" ? "Morning · before noon" : "Evening · after classes"}
+              {pref === "morning" ? t("Morning · before noon") : t("Evening · after classes")}
             </button>
           ))}
         </div>
@@ -92,23 +99,23 @@ export function SettingsModal() {
 
       <div className="toggle-row">
         <div>
-          <strong>Reminders</strong>
-          <small>Heads-up before classes and upcoming deadlines</small>
+          <strong>{t("Reminders")}</strong>
+          <small>{t("Heads-up before classes and upcoming deadlines")}</small>
         </div>
         <Switch
           checked={form.reminders}
-          label="Reminders"
+          label={t("Reminders")}
           onChange={(reminders) => setForm({ ...form, reminders })}
         />
       </div>
       <div className="toggle-row">
         <div>
-          <strong>Weekly email digest</strong>
-          <small>A Sunday summary of the week ahead</small>
+          <strong>{t("Weekly email digest")}</strong>
+          <small>{t("A Sunday summary of the week ahead")}</small>
         </div>
         <Switch
           checked={form.emailDigest}
-          label="Weekly email digest"
+          label={t("Weekly email digest")}
           onChange={(emailDigest) => setForm({ ...form, emailDigest })}
         />
       </div>
@@ -117,8 +124,8 @@ export function SettingsModal() {
 
       <div className="danger-zone">
         <div>
-          <strong>Restore sample schedule</strong>
-          <small>Replaces your blocks and deadlines with the demo week.</small>
+          <strong>{t("Restore sample schedule")}</strong>
+          <small>{t("Replaces your classes, study time and deadlines with the demo week.")}</small>
         </div>
         <button
           className="button button-danger"
@@ -128,7 +135,7 @@ export function SettingsModal() {
             close()
           }}
         >
-          <RotateCcw size={14} /> {confirmReset ? "Click to confirm" : "Restore"}
+          <RotateCcw size={14} /> {confirmReset ? t("Click to confirm") : t("Restore")}
         </button>
       </div>
     </Modal>

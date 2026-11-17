@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent } from "react"
 import { AlertTriangle, CheckCircle2, ImageUp, RotateCcw, ShieldCheck, Sparkles } from "lucide-react"
+import { t } from "../lib/i18n"
 import { readSchedule, ScheduleReadError, type ScheduleImport } from "../lib/scheduleOcr"
 
 type Phase =
@@ -23,7 +24,7 @@ export function ScreenshotImport({ onImported }: { onImported: (result: Schedule
   const read = async (file: File) => {
     if (busy) return
     if (!file.type.startsWith("image/")) {
-      setPhase({ kind: "error", message: "That file isn’t an image. Upload a screenshot (PNG or JPG) of your schedule." })
+      setPhase({ kind: "error", message: t("That file isn’t an image. Upload a screenshot (PNG or JPG) of your schedule.") })
       return
     }
     if (previewRef.current) URL.revokeObjectURL(previewRef.current)
@@ -50,8 +51,8 @@ export function ScreenshotImport({ onImported }: { onImported: (result: Schedule
         preview,
         message:
           error instanceof ScheduleReadError
-            ? error.message
-            : "Something went wrong while reading the screenshot. Try again, or add your classes manually below.",
+            ? t(error.message)
+            : t("Something went wrong while reading the screenshot. Try again, or add your classes manually below."),
       })
     } finally {
       await ocr?.terminate()
@@ -111,18 +112,18 @@ export function ScreenshotImport({ onImported }: { onImported: (result: Schedule
           </div>
           <div className="import-copy">
             <span className="import-kicker">
-              <Sparkles size={13} /> Fastest way
+              <Sparkles size={13} /> {t("Fastest way")}
             </span>
-            <strong>Upload your schedule screenshot</strong>
+            <strong>{t("Upload your schedule screenshot")}</strong>
             <p>
-              Hey! Can you take a screenshot of your schedule in the Yeditepe app (the <b>Program</b> tab) and upload
-              it? We’ll build your week from it.
+              {t("Hey! Can you take a screenshot of your schedule in the Yeditepe app (the")} <b>{t("Program")}</b>{" "}
+              {t("tab) and upload it? We’ll build your week from it.")}
             </p>
             <button className="button button-primary import-button" onClick={() => inputRef.current?.click()}>
-              <ImageUp size={17} /> Upload screenshot
+              <ImageUp size={17} /> {t("Upload screenshot")}
             </button>
             <small>
-              <ShieldCheck size={13} /> Read on your device — the image never leaves your phone.
+              <ShieldCheck size={13} /> {t("Read on your device — the image never leaves your phone.")}
             </small>
           </div>
         </>
@@ -130,16 +131,16 @@ export function ScreenshotImport({ onImported }: { onImported: (result: Schedule
 
       {phase.kind === "reading" && (
         <div className="import-status">
-          <img src={phase.preview} alt="Your schedule screenshot" />
+          <img src={phase.preview} alt={t("Your schedule screenshot")} />
           <div>
-            <strong>{phase.stage === "loading" ? "Getting the reader ready…" : "Reading your timetable…"}</strong>
+            <strong>{phase.stage === "loading" ? t("Getting the reader ready…") : t("Reading your timetable…")}</strong>
             <div className="import-bar" role="progressbar" aria-valuenow={phase.percent} aria-valuemin={0} aria-valuemax={100}>
               <span style={{ width: `${phase.percent}%` }} />
             </div>
             <small>
               {phase.stage === "loading"
-                ? "First time only: downloading the on-device reader (~7 MB)."
-                : "Finding days, hours and course codes — all on your device."}
+                ? t("First time only: downloading the on-device reader (~7 MB).")
+                : t("Finding days, hours and course codes — all on your device.")}
             </small>
           </div>
         </div>
@@ -147,20 +148,20 @@ export function ScreenshotImport({ onImported }: { onImported: (result: Schedule
 
       {phase.kind === "done" && (
         <div className="import-status">
-          <img src={phase.preview} alt="Your schedule screenshot" />
+          <img src={phase.preview} alt={t("Your schedule screenshot")} />
           <div>
             <strong className="import-ok">
-              <CheckCircle2 size={17} /> Found {phase.result.classes.length}{" "}
-              {phase.result.classes.length === 1 ? "class" : "classes"} · {phase.result.hoursPerWeek} hrs a week
+              <CheckCircle2 size={17} />{" "}
+              {t("Found {n} classes · {h} hrs a week", { n: phase.result.classes.length, h: phase.result.hoursPerWeek })}
             </strong>
-            <small>Check them below — tap any we misread to deselect it, or add a missing one.</small>
+            <small>{t("Check them below — tap any we misread to deselect it, or add a missing one.")}</small>
             {phase.result.warnings.map((w) => (
               <small className="import-warning" key={w}>
-                <AlertTriangle size={13} /> {w}
+                <AlertTriangle size={13} /> {t(w)}
               </small>
             ))}
             <button className="text-button import-again" onClick={() => inputRef.current?.click()}>
-              <RotateCcw size={14} /> Use another screenshot
+              <RotateCcw size={14} /> {t("Use another screenshot")}
             </button>
           </div>
         </div>
@@ -168,14 +169,14 @@ export function ScreenshotImport({ onImported }: { onImported: (result: Schedule
 
       {phase.kind === "error" && (
         <div className="import-status">
-          {phase.preview && <img src={phase.preview} alt="Your schedule screenshot" />}
+          {phase.preview && <img src={phase.preview} alt={t("Your schedule screenshot")} />}
           <div>
             <strong className="import-error">
-              <AlertTriangle size={17} /> We couldn’t read that one
+              <AlertTriangle size={17} /> {t("We couldn’t read that one")}
             </strong>
             <small>{phase.message}</small>
             <button className="button button-ghost import-again" onClick={() => inputRef.current?.click()}>
-              <ImageUp size={15} /> Try another screenshot
+              <ImageUp size={15} /> {t("Try another screenshot")}
             </button>
           </div>
         </div>

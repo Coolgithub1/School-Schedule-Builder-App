@@ -20,27 +20,32 @@ import {
   WEEKDAYS,
 } from "../lib/dates"
 import { generateSchedule, uid } from "../lib/schedule"
-import { CLASS_PRESETS } from "../lib/seed"
+import { classPresets } from "../lib/seed"
 import { useStore } from "../lib/store"
 import type { FocusPref, SetupActivity, SetupClass } from "../lib/types"
 import { Logo } from "../components/ui"
+import { TypeIcon } from "../components/TypeIcon"
+import { getLang, t } from "../lib/i18n"
 import { ScreenshotImport } from "../components/ScreenshotImport"
 import type { ScheduleImport } from "../lib/scheduleOcr"
 
-const dayName = (d: number) => WEEKDAYS[d].label.slice(0, 3)
+const dayName = (d: number) => {
+  const s = WEEKDAYS[d].short
+  return s[0] + s.slice(1).toLocaleLowerCase(getLang())
+}
 const describeClass = (c: SetupClass) =>
   `${c.days.map(dayName).join(" · ")}, ${formatTime(c.start)} – ${formatTime(c.start + c.duration)}${c.location ? ` · ${c.location}` : ""}`
 
 export function SetupScreen() {
   const { navigate, completeSetup, profile, toast } = useStore()
   const [step, setStep] = useState(1)
-  const [classes, setClasses] = useState<SetupClass[]>(CLASS_PRESETS)
-  const [selected, setSelected] = useState<string[]>(CLASS_PRESETS.map((c) => c.id))
+  const [classes, setClasses] = useState<SetupClass[]>(classPresets)
+  const [selected, setSelected] = useState<string[]>(() => classPresets().map((c) => c.id))
   const [addingClass, setAddingClass] = useState(false)
   const [studyHours, setStudyHours] = useState(profile.studyGoal || 8)
   const [pref, setPref] = useState<FocusPref>(profile.focusPref)
   const [activities, setActivities] = useState<SetupActivity[]>([
-    { id: uid(), name: "Design Club", day: 2, start: 16, duration: 1.5 },
+    { id: uid(), name: t("Design Club"), day: 2, start: 16, duration: 1.5 },
   ])
   const [error, setError] = useState("")
   const [imported, setImported] = useState<ScheduleImport | null>(null)
@@ -64,7 +69,7 @@ export function SetupScreen() {
     setImported(result)
     setAddingClass(false)
     setError("")
-    toast(`Read ${result.classes.length} classes from your screenshot`)
+    toast(t("Read {n} classes from your screenshot", { n: result.classes.length }))
   }
 
   const updateActivity = (id: string, patch: Partial<SetupActivity>) =>
@@ -75,18 +80,18 @@ export function SetupScreen() {
     completeSetup({ events, studyGoal: studyHours, focusPref: pref })
     const focusBlocks = events.filter((e) => e.type === "study").length
     toast(
-      `Your week is ready — ${chosen.length} ${chosen.length === 1 ? "class" : "classes"} and ${focusBlocks} focus blocks planned`,
+      t("Your week is ready — {classes} classes and {blocks} study sessions planned", { classes: chosen.length, blocks: focusBlocks }),
     )
     navigate("planner")
   }
 
   const next = () => {
     if (step === 1 && chosen.length === 0) {
-      setError("Pick at least one class to continue.")
+      setError(t("Pick at least one class to continue."))
       return
     }
     if (step === 1 && addingClass) {
-      setError("Finish adding your class first, or cancel it.")
+      setError(t("Finish adding your class first, or cancel it."))
       return
     }
     setError("")
@@ -104,8 +109,8 @@ export function SetupScreen() {
     <main className="setup-page">
       <header className="setup-header">
         <Logo />
-        <span className="setup-step">Step {step} of 3</span>
-        <button className="icon-button" onClick={() => navigate("auth")} aria-label="Exit setup">
+        <span className="setup-step">{t("Step {n} of 3", { n: step })}</span>
+        <button className="icon-button" onClick={() => navigate("auth")} aria-label={t("Exit setup")}>
           <X size={19} />
         </button>
       </header>
@@ -119,18 +124,18 @@ export function SetupScreen() {
             <div className="setup-heading">
               <span className="question-number">01</span>
               <div>
-                <h1>What are you taking?</h1>
-                <p>Upload your schedule screenshot, or pick classes yourself.</p>
+                <h1>{t("What are you taking?")}</h1>
+                <p>{t("Upload your schedule screenshot, or pick classes yourself.")}</p>
               </div>
             </div>
             <ScreenshotImport onImported={applyImport} />
             <div className="choice-divider">
-              <span>{imported ? "Your classes from the screenshot" : "or pick your classes manually"}</span>
+              <span>{imported ? t("Your classes from the screenshot") : t("or pick your classes manually")}</span>
             </div>
             <div className="choice-list">
               {classes.map((item, index) => {
                 const isSelected = selected.includes(item.id)
-                const custom = !CLASS_PRESETS.some((p) => p.id === item.id)
+                const custom = !["calc", "hist", "phys"].includes(item.id)
                 return (
                   <div className={`choice-row ${custom ? "has-remove" : ""}`} key={item.id}>
                     <button
@@ -139,7 +144,7 @@ export function SetupScreen() {
                       aria-pressed={isSelected}
                     >
                       <span className={`subject-icon subject-${(index % 3) + 1}`}>
-                        <BookOpen size={19} />
+                        <TypeIcon type="class" size={19} />
                       </span>
                       <span>
                         <strong>{item.name}</strong>
@@ -151,7 +156,7 @@ export function SetupScreen() {
                       <button
                         className="row-delete"
                         onClick={() => removeClass(item.id)}
-                        aria-label={`Remove ${item.name}`}
+                        aria-label={t("Remove {name}", { name: item.name })}
                       >
                         <Trash2 size={15} />
                       </button>
@@ -173,8 +178,8 @@ export function SetupScreen() {
                   }}
                 />
               ) : (
-                <button className="add-class" onClick={() => setAddingClass(true)}>
-                  <Plus size={17} /> Add another class
+                <button className="add-class add-type-class" onClick={() => setAddingClass(true)}>
+                  <TypeIcon type="class" size={17} /> {t("Add another class")}
                 </button>
               )}
             </div>
@@ -186,20 +191,21 @@ export function SetupScreen() {
             <div className="setup-heading">
               <span className="question-number">02</span>
               <div>
-                <h1>How do you want to study?</h1>
-                <p>We’ll protect these hours around your classes.</p>
+                <h1>{t("How do you want to study?")}</h1>
+                <p>{t("We’ll protect these hours around your classes.")}</p>
               </div>
             </div>
             <div className="study-panel">
               <div className="study-number">
+                <TypeIcon type="study" size={26} />
                 <strong>{studyHours}</strong>
-                <span>hours / week</span>
+                <span>{t("study hours / week")}</span>
               </div>
               <p className="study-hint">
-                About {blockCount} focus {blockCount === 1 ? "block" : "blocks"} spread across your week
+                {t("About {n} study sessions spread across your week", { n: blockCount })}
               </p>
               <input
-                aria-label="Study hours per week"
+                aria-label={t("Study hours per week")}
                 type="range"
                 min="3"
                 max="18"
@@ -207,11 +213,11 @@ export function SetupScreen() {
                 onChange={(e) => setStudyHours(Number(e.target.value))}
               />
               <div className="range-labels">
-                <span>Light</span>
-                <span>Focused</span>
-                <span>Intensive</span>
+                <span>{t("Light")}</span>
+                <span>{t("Focused")}</span>
+                <span>{t("Intensive")}</span>
               </div>
-              <div className="preference-grid" role="radiogroup" aria-label="Focus time">
+              <div className="preference-grid" role="radiogroup" aria-label={t("Focus time")}>
                 <button
                   role="radio"
                   aria-checked={pref === "morning"}
@@ -221,8 +227,8 @@ export function SetupScreen() {
                   <span className="sun-icon">
                     <Sun size={17} />
                   </span>
-                  <strong>Morning focus</strong>
-                  <small>Before noon</small>
+                  <strong>{t("Morning focus")}</strong>
+                  <small>{t("Before noon")}</small>
                 </button>
                 <button
                   role="radio"
@@ -233,8 +239,8 @@ export function SetupScreen() {
                   <span className="moon-icon">
                     <Moon size={17} />
                   </span>
-                  <strong>Evening focus</strong>
-                  <small>After classes</small>
+                  <strong>{t("Evening focus")}</strong>
+                  <small>{t("After classes")}</small>
                 </button>
               </div>
             </div>
@@ -246,43 +252,43 @@ export function SetupScreen() {
             <div className="setup-heading">
               <span className="question-number">03</span>
               <div>
-                <h1>What else is in your week?</h1>
-                <p>Make room for clubs, work, exercise, and life.</p>
+                <h1>{t("What else is in your week?")}</h1>
+                <p>{t("Make room for clubs, work, exercise, and life.")}</p>
               </div>
             </div>
             <div className="activity-list">
               {activities.length === 0 && (
                 <p className="activity-empty">
-                  Nothing else on the calendar? That’s fine — you can always add activities later.
+                  {t("Nothing else on the calendar? That’s fine — you can always add activities later.")}
                 </p>
               )}
               {activities.map((a, index) => (
                 <div className="activity-item" key={a.id}>
                   <label>
-                    Activity name
+                    {t("Activity name")}
                     <input
                       autoFocus={index === activities.length - 1 && !a.name}
                       value={a.name}
-                      placeholder="e.g. Part-time job, gym, soccer practice"
+                      placeholder={t("e.g. Part-time job, gym, soccer practice")}
                       onChange={(e) => updateActivity(a.id, { name: e.target.value })}
                     />
                   </label>
                   <div className="activity-row">
                     <label>
-                      Day
+                      {t("Day")}
                       <select
                         value={a.day}
                         onChange={(e) => updateActivity(a.id, { day: Number(e.target.value) })}
                       >
                         {WEEKDAYS.map((d, i) => (
-                          <option value={i} key={d.short}>
+                          <option value={i} key={i}>
                             {d.label}
                           </option>
                         ))}
                       </select>
                     </label>
                     <label>
-                      Time
+                      {t("Time")}
                       <select
                         value={a.start}
                         onChange={(e) => {
@@ -298,7 +304,7 @@ export function SetupScreen() {
                       </select>
                     </label>
                     <label>
-                      Length
+                      {t("Length")}
                       <select
                         value={a.duration}
                         onChange={(e) => updateActivity(a.id, { duration: Number(e.target.value) })}
@@ -314,14 +320,14 @@ export function SetupScreen() {
                   <button
                     className="row-delete"
                     onClick={() => setActivities((list) => list.filter((x) => x.id !== a.id))}
-                    aria-label={`Remove ${a.name || "activity"}`}
+                    aria-label={t("Remove {name}", { name: a.name || t("activity") })}
                   >
                     <Trash2 size={15} />
                   </button>
                 </div>
               ))}
               <button
-                className="add-class"
+                className="add-class add-type-activity"
                 onClick={() =>
                   setActivities((list) => [
                     ...list,
@@ -329,7 +335,7 @@ export function SetupScreen() {
                   ])
                 }
               >
-                <Plus size={17} /> Add {activities.length ? "another" : "an"} activity
+                <TypeIcon type="activity" size={17} /> {activities.length ? t("Add another activity") : t("Add an activity")}
               </button>
             </div>
           </>
@@ -344,7 +350,7 @@ export function SetupScreen() {
 
       <footer className="setup-footer">
         <button className="button button-ghost" onClick={back}>
-          <ChevronLeft size={17} /> Back
+          <ChevronLeft size={17} /> {t("Back")}
         </button>
         <div className="step-dots">
           {[1, 2, 3].map((item) => (
@@ -352,7 +358,7 @@ export function SetupScreen() {
           ))}
         </div>
         <button className="button button-primary" onClick={next}>
-          {step === 3 ? "Build my week" : "Continue"}{" "}
+          {step === 3 ? t("Build my week") : t("Continue")}{" "}
           {step === 3 ? <Sparkles size={16} /> : <ChevronRight size={17} />}
         </button>
       </footer>
@@ -383,21 +389,21 @@ function AddClassForm({
   return (
     <form className="add-class-form" onSubmit={submit}>
       <label>
-        Class name
+        {t("Class name")}
         <input
           autoFocus
           value={name}
-          placeholder="e.g. Organic Chemistry"
+          placeholder={t("e.g. VCD 421")}
           onChange={(e) => setName(e.target.value)}
         />
       </label>
       <div className="field-group">
-        Meets on
+        {t("Meets on")}
         <div className="day-chips">
           {WEEKDAYS.map((d, i) => (
             <button
               type="button"
-              key={d.short}
+              key={i}
               aria-pressed={days.includes(i)}
               aria-label={d.label}
               className={days.includes(i) ? "active" : ""}
@@ -405,14 +411,14 @@ function AddClassForm({
                 setDays((list) => (list.includes(i) ? list.filter((x) => x !== i) : [...list, i]))
               }
             >
-              {d.label.slice(0, 2)}
+              {dayName(i)}
             </button>
           ))}
         </div>
       </div>
       <div className="three-col">
         <label>
-          Starts
+          {t("Starts")}
           <select
             value={start}
             onChange={(e) => {
@@ -429,7 +435,7 @@ function AddClassForm({
           </select>
         </label>
         <label>
-          Length
+          {t("Length")}
           <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
             {DURATION_OPTIONS.filter((d) => start + d <= DAY_END).map((d) => (
               <option value={d} key={d}>
@@ -439,16 +445,16 @@ function AddClassForm({
           </select>
         </label>
         <label>
-          Room
-          <input value={location} placeholder="Optional" onChange={(e) => setLocation(e.target.value)} />
+          {t("Room")}
+          <input value={location} placeholder={t("Optional")} onChange={(e) => setLocation(e.target.value)} />
         </label>
       </div>
       <div className="form-actions">
         <button type="button" className="button button-ghost" onClick={onCancel}>
-          Cancel
+          {t("Cancel")}
         </button>
         <button type="submit" className="button button-dark" disabled={!canAdd}>
-          <Plus size={15} /> Add class
+          <TypeIcon type="class" size={15} /> {t("Add class")}
         </button>
       </div>
     </form>

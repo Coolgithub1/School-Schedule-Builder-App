@@ -8,6 +8,8 @@ A weekly planner for students: add your classes, set a study-hours goal and your
 
 - **Screenshot import:** upload a screenshot of your Yeditepe timetable (Program tab) and your classes are filled in automatically — read on-device, the image never leaves your phone
 - Guided setup that turns classes, study goals and activities into a weekly schedule
+- **English and Turkish:** chosen on first launch (with flags) and switchable in Settings — 24-hour clock, Turkish day/month names
+- Colour-coded types with matching icons everywhere — purple **class**, green **study time**, orange **activity** — and a “What do you want to add?” chooser
 - Drag-and-drop calendar with conflict warnings, weekly or one-off blocks, and undo
 - Overview of today, weekly focus progress, and upcoming deadlines
 - Study goals page with per-subject focus hours and an assignments/exams tracker
@@ -15,6 +17,8 @@ A weekly planner for students: add your classes, set a study-hours goal and your
 - Works on desktop and mobile; your data is saved in your own browser (localStorage)
 
 Tip: on the log-in screen, any email signs you in with a sample week.
+
+Check that every UI string has a Turkish translation with `node scripts/check-i18n.mjs`.
 
 ## Run locally
 

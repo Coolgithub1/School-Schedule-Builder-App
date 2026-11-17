@@ -26,13 +26,15 @@ import {
   todayIndex,
   weekKey,
 } from "../lib/dates"
+import { getLang, t } from "../lib/i18n"
 import { eventsForDay, focusStats } from "../lib/schedule"
 import { initials } from "../lib/seed"
 import { useStore } from "../lib/store"
-import type { AppScreen } from "../lib/types"
+import type { AppScreen, EventType } from "../lib/types"
 import { CommandPalette } from "./CommandPalette"
 import { EventDrawer } from "./EventDrawer"
 import { SettingsModal } from "./SettingsModal"
+import { TypeIcon, TYPE_META, typeLabel } from "./TypeIcon"
 import { Logo, Switch } from "./ui"
 
 const NAV: { id: AppScreen; label: string; icon: typeof CalendarDays }[] = [
@@ -104,7 +106,7 @@ function Sidebar({ drawer = false }: { drawer?: boolean }) {
       <div className="sidebar-top">
         <Logo onClick={() => navigate("overview")} />
         {drawer && (
-          <button className="icon-button" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+          <button className="icon-button" onClick={() => setMenuOpen(false)} aria-label={t("Close menu")}>
             <X size={18} />
           </button>
         )}
@@ -115,10 +117,10 @@ function Sidebar({ drawer = false }: { drawer?: boolean }) {
             key={id}
             className={screen === id ? "active" : ""}
             onClick={() => navigate(id)}
-            aria-label={label}
-            title={label}
+            aria-label={t(label)}
+            title={t(label)}
           >
-            <Icon size={19} /> {label}
+            <Icon size={19} /> {t(label)}
           </button>
         ))}
       </nav>
@@ -127,17 +129,17 @@ function Sidebar({ drawer = false }: { drawer?: boolean }) {
         <span>
           <Sparkles size={15} />
         </span>
-        <strong>{stats.remaining > 0 ? "Stay in your flow" : "Goal reached!"}</strong>
+        <strong>{stats.remaining > 0 ? t("Stay in your flow") : t("Goal reached!")}</strong>
         <p>
           {stats.remaining > 0
-            ? `You have ${formatHours(stats.remaining)} focus hours left this week.`
-            : "You hit your weekly focus goal. Enjoy the downtime."}
+            ? t("You have {n} study hours left this week.", { n: formatHours(stats.remaining) })
+            : t("You hit your weekly study goal. Enjoy the downtime.")}
         </p>
         <div>
           <i style={{ width: `${stats.pct}%` }} />
         </div>
       </button>
-      <button className="profile-row" onClick={() => setSettingsOpen(true)} title="Profile & settings">
+      <button className="profile-row" onClick={() => setSettingsOpen(true)} title={t("Profile & settings")}>
         <span>{initials(profile.name)}</span>
         <div>
           <strong>{profile.name}</strong>
@@ -169,19 +171,23 @@ function useNotices(): Notice[] {
         notices.push({
           id: e.id,
           kind: "event",
-          title: `${e.title} at ${formatTime(e.start)}`,
-          meta: e.detail || `Today’s ${e.type}`,
+          title: t("{title} at {time}", { title: e.title, time: formatTime(e.start) }),
+          meta: e.detail || typeLabel(e.type),
         }),
       )
   data.tasks
-    .filter((t) => !t.done && daysUntil(t.due) <= 2)
+    .filter((task) => !task.done && daysUntil(task.due) <= 2)
     .sort((a, b) => a.due.localeCompare(b.due))
-    .forEach((t) =>
+    .forEach((task) =>
       notices.push({
-        id: t.id,
+        id: task.id,
         kind: "task",
-        title: t.title,
-        meta: `${daysUntil(t.due) < 0 ? "Overdue" : `Due ${dueLabel(t.due).toLowerCase()}`} · ${t.subject}`,
+        title: task.title,
+        meta: `${
+          daysUntil(task.due) < 0
+            ? t("Overdue")
+            : t("Due {when}", { when: dueLabel(task.due).toLocaleLowerCase(getLang()) })
+        } · ${task.subject}`,
       }),
     )
   return notices
@@ -218,26 +224,26 @@ function Topbar() {
     updateProfile({ emailDigest: next })
     toast(
       next
-        ? `Weekly digest turned on — summaries go to ${profile.email}`
-        : "Weekly email digest turned off",
+        ? t("Weekly digest turned on — summaries go to {email}", { email: profile.email })
+        : t("Weekly email digest turned off"),
     )
   }
 
   return (
     <header className="app-topbar">
-      <button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+      <button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label={t("Open menu")}>
         <Menu size={20} />
       </button>
       <button className="topbar-search" onClick={() => setPaletteOpen(true)}>
         <Search size={17} />
-        <span>Search your schedule</span>
+        <span>{t("Search your schedule")}</span>
         <kbd>{isMac ? "⌘ K" : "Ctrl K"}</kbd>
       </button>
       <div className="topbar-actions">
         <button
           className="icon-button mobile-search"
           onClick={() => setPaletteOpen(true)}
-          aria-label="Search"
+          aria-label={t("Search")}
         >
           <Search size={18} />
         </button>
@@ -248,34 +254,34 @@ function Topbar() {
               setBellOpen((open) => !open)
               setSeenCount(notices.length)
             }}
-            aria-label="Notifications"
+            aria-label={t("Notifications")}
             aria-expanded={bellOpen}
           >
             {profile.reminders ? <BellRing size={19} /> : <Bell size={19} />}
           </button>
           {bellOpen && (
-            <div className="popover" role="dialog" aria-label="Notifications">
+            <div className="popover" role="dialog" aria-label={t("Notifications")}>
               <header>
-                <strong>Notifications</strong>
+                <strong>{t("Notifications")}</strong>
                 <label>
-                  Reminders
+                  {t("Reminders")}
                   <Switch
                     checked={profile.reminders}
-                    label="Reminders"
+                    label={t("Reminders")}
                     onChange={(reminders) => {
                       updateProfile({ reminders })
-                      toast(reminders ? "Reminders turned on" : "Reminders paused")
+                      toast(reminders ? t("Reminders turned on") : t("Reminders paused"))
                     }}
                   />
                 </label>
               </header>
               {!profile.reminders ? (
                 <p className="popover-empty">
-                  Reminders are paused. Turn them on to see what’s coming up.
+                  {t("Reminders are paused. Turn them on to see what’s coming up.")}
                 </p>
               ) : notices.length === 0 ? (
                 <p className="popover-empty">
-                  <Check size={16} /> You’re all caught up.
+                  <Check size={16} /> {t("You’re all caught up.")}
                 </p>
               ) : (
                 <ul>
@@ -307,15 +313,15 @@ function Topbar() {
           className={`sync-button ${profile.emailDigest ? "synced" : ""}`}
           onClick={toggleDigest}
           aria-pressed={profile.emailDigest}
-          title="Weekly schedule summary by email"
+          title={t("Weekly schedule summary by email")}
         >
-          <Mail size={17} /> {profile.emailDigest ? "Digest on" : "Email digest"}
+          <Mail size={17} /> {profile.emailDigest ? t("Digest on") : t("Email digest")}
           {profile.emailDigest && <Check size={14} />}
         </button>
         <button
           className="top-avatar"
           onClick={() => setSettingsOpen(true)}
-          aria-label="Profile and settings"
+          aria-label={t("Profile & settings")}
         >
           {initials(profile.name)}
         </button>
@@ -324,30 +330,81 @@ function Topbar() {
   )
 }
 
+/** Small sheet asking what to add, so the "+" never drops students into an unlabeled form. */
+export function AddChooser({
+  onClose,
+  className = "",
+  prefill = {},
+  weekStart,
+}: {
+  onClose: () => void
+  className?: string
+  prefill?: { day?: number }
+  weekStart?: string
+}) {
+  const { openNewEvent } = useStore()
+  return (
+    <>
+      <div className="add-chooser-scrim" onMouseDown={onClose} />
+      <div className={`add-chooser ${className}`} role="menu" aria-label={t("What do you want to add?")}>
+        <strong>{t("What do you want to add?")}</strong>
+        {(["class", "study", "activity"] as EventType[]).map((type) => (
+          <button
+            key={type}
+            role="menuitem"
+            className={`add-choice type-${type}`}
+            onClick={() => {
+              onClose()
+              openNewEvent({ ...prefill, type, recurring: type !== "study" }, weekStart)
+            }}
+          >
+            <span className="add-choice-icon">
+              <TypeIcon type={type} size={18} />
+            </span>
+            <span>
+              <b>{t(TYPE_META[type].add)}</b>
+              <small>
+                {type === "class"
+                  ? t("A lecture, lab or section")
+                  : type === "study"
+                    ? t("Time to review or do homework")
+                    : t("Clubs, work, gym…")}
+              </small>
+            </span>
+          </button>
+        ))}
+      </div>
+    </>
+  )
+}
+
 function MobileNav() {
-  const { screen, navigate, openNewEvent, setSettingsOpen } = useStore()
+  const { screen, navigate, setSettingsOpen } = useStore()
+  const [choosing, setChoosing] = useState(false)
   const tab = (id: AppScreen, label: string, Icon: typeof CalendarDays) => (
     <button className={screen === id ? "active" : ""} onClick={() => navigate(id)}>
       <Icon size={19} />
-      <span>{label}</span>
+      <span>{t(label)}</span>
     </button>
   )
   return (
-    <nav className="mobile-bottom-nav" aria-label="Primary navigation">
+    <nav className="mobile-bottom-nav" aria-label={t("Primary navigation")}>
       {tab("overview", "Overview", LayoutDashboard)}
       {tab("planner", "Schedule", CalendarDays)}
       <button
-        className="mobile-add-button"
-        onClick={() => openNewEvent()}
-        aria-label="Add time block"
+        className={`mobile-add-button ${choosing ? "open" : ""}`}
+        onClick={() => setChoosing((c) => !c)}
+        aria-label={t("Add to your schedule")}
+        aria-expanded={choosing}
       >
         <Plus size={22} />
       </button>
       {tab("goals", "Goals", Target)}
       <button onClick={() => setSettingsOpen(true)}>
         <UserRound size={19} />
-        <span>Profile</span>
+        <span>{t("Profile")}</span>
       </button>
+      {choosing && <AddChooser onClose={() => setChoosing(false)} className="from-nav" />}
     </nav>
   )
 }

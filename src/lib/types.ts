@@ -1,4 +1,6 @@
-export type Screen = "welcome" | "auth" | "setup" | "planner" | "overview" | "goals"
+import type { Lang } from "./i18n"
+
+export type Screen = "language" | "welcome" | "auth" | "setup" | "planner" | "overview" | "goals"
 export type AppScreen = "planner" | "overview" | "goals"
 export type AuthMode = "login" | "register"
 export type EventType = "class" | "study" | "activity"
@@ -41,6 +43,8 @@ export type Profile = {
 }
 
 export type AppData = {
+  /** Chosen UI language; null until the student picks one on first launch */
+  language?: Lang | null
   profile: Profile | null
   signedIn: boolean
   onboarded: boolean

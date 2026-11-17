@@ -34,6 +34,9 @@ import {
 } from "../lib/dates"
 import { eventsForWeek, focusStats, isDone, suggestBlock } from "../lib/schedule"
 import { useNow, useStore } from "../lib/store"
+import { t } from "../lib/i18n"
+import { AddChooser } from "../components/Shell"
+import { TypeIcon, typeLabel } from "../components/TypeIcon"
 import type { ScheduleEvent } from "../lib/types"
 
 type DragInfo = {
@@ -67,6 +70,7 @@ export function PlannerScreen() {
   const today = todayIndex()
   const isCurrent = weekOffset === 0
   const [editing, setEditing] = useState(false)
+  const [choosing, setChoosing] = useState(false)
   const [selectedDay, setSelectedDay] = useState(today < 5 ? today : 0)
   const [hover, setHover] = useState<{ day: number; start: number } | null>(null)
   const [drag, setDrag] = useState<{ id: string; day: number; start: number } | null>(null)
@@ -170,8 +174,8 @@ export function PlannerScreen() {
     openNewEvent(
       {
         type: "study",
-        title: "Focus session",
-        detail: "Suggested by studyflow",
+        title: t("Study session"),
+        detail: t("Suggested by studyflow"),
         day: suggestion.day,
         start: suggestion.start,
         duration: suggestion.duration,
@@ -182,11 +186,11 @@ export function PlannerScreen() {
 
   const weekSwitcher = (
     <div className="week-switcher">
-      <button onClick={() => setWeekOffset((w) => w - 1)} aria-label="Previous week">
+      <button onClick={() => setWeekOffset((w) => w - 1)} aria-label={t("Previous week")}>
         <ChevronLeft size={17} />
       </button>
       <strong>{relativeWeekLabel(weekOffset, viewWeek)}</strong>
-      <button onClick={() => setWeekOffset((w) => w + 1)} aria-label="Next week">
+      <button onClick={() => setWeekOffset((w) => w + 1)} aria-label={t("Next week")}>
         <ChevronRight size={17} />
       </button>
       {!isCurrent && (
@@ -201,33 +205,37 @@ export function PlannerScreen() {
     <div className="planner-content">
       <div className="planner-heading">
         <div>
-          <span className="page-kicker">MY SCHEDULE</span>
+          <span className="page-kicker">{t("MY SCHEDULE")}</span>
           <h1>
-            {isCurrent ? "Your week, in balance." : weekOffset > 0 ? "Planning ahead." : "Looking back."}
+            {isCurrent ? t("Your week, in balance.") : weekOffset > 0 ? t("Planning ahead.") : t("Looking back.")}
           </h1>
           <p>
-            {weekRangeLabel(viewWeek)} · {classCount} {classCount === 1 ? "class" : "classes"} ·{" "}
-            {formatHours(stats.planned)} focus hours planned
+            {weekRangeLabel(viewWeek)} · {t("{n} classes", { n: classCount })} ·{" "}
+            {t("{n} study hours planned", { n: formatHours(stats.planned) })}
           </p>
         </div>
         <div className="planner-actions">
           <button
-            className={`button ${editing ? "button-dark" : "button-ghost"}`}
+            className={`button edit-week ${editing ? "button-dark" : "button-ghost"}`}
             onClick={() => setEditing(!editing)}
             aria-pressed={editing}
+            aria-label={editing ? t("Done editing") : t("Edit week")}
           >
             {editing ? <Check size={16} /> : <Pencil size={16} />}
-            {editing ? "Done editing" : "Edit week"}
+            <span className="edit-label">{editing ? t("Done editing") : t("Edit week")}</span>
           </button>
-          <button className="button button-primary" onClick={() => openNewEvent({}, viewWeek)}>
-            <Plus size={17} /> Add block
+          <button className="button add-type add-class-btn" onClick={() => openNewEvent({ type: "class", recurring: true }, viewWeek)}>
+            <TypeIcon type="class" size={17} /> {t("Add class")}
+          </button>
+          <button className="button add-type add-study-btn" onClick={() => openNewEvent({ type: "study" }, viewWeek)}>
+            <TypeIcon type="study" size={17} /> {t("Add study time")}
           </button>
         </div>
       </div>
 
       {editing && (
         <p className="edit-hint">
-          Editing — tap the trash icon to remove a block. You can drag blocks to a new time anytime.
+          {t("Editing — tap the trash icon to remove something. You can drag items to a new time anytime.")}
         </p>
       )}
 
@@ -235,18 +243,12 @@ export function PlannerScreen() {
         <div className="calendar-toolbar">
           {weekSwitcher}
           <div className="legend">
-            <span>
-              <i className="class" />
-              Class
-            </span>
-            <span>
-              <i className="study" />
-              Study
-            </span>
-            <span>
-              <i className="activity" />
-              Activity
-            </span>
+            {(["class", "study", "activity"] as const).map((type) => (
+              <span key={type} className={`legend-${type}`}>
+                <TypeIcon type={type} size={13} />
+                {typeLabel(type)}
+              </span>
+            ))}
           </div>
         </div>
         <div className="calendar-grid">
@@ -332,12 +334,12 @@ export function PlannerScreen() {
                         }
                       }}
                       aria-label={`${event.title}, ${WEEKDAYS[event.day].label} ${formatTime(event.start)}${
-                        done ? ", completed" : ""
+                        done ? `, ${t("completed")}` : ""
                       }`}
                       title={`${event.title} · ${formatTime(event.start)}–${formatTime(event.start + event.duration)}`}
                     >
                       <strong>
-                        {done && <Check size={10} strokeWidth={3} />} {event.title}
+                        {done ? <Check size={10} strokeWidth={3} /> : <TypeIcon type={event.type} size={10} />} {event.title}
                       </strong>
                       <span>
                         {formatTime(event.start)}
@@ -351,7 +353,7 @@ export function PlannerScreen() {
                             e.stopPropagation()
                             deleteEvent(event.id)
                           }}
-                          aria-label={`Delete ${event.title}`}
+                          aria-label={t("Delete {title}", { title: event.title })}
                         >
                           <Trash2 size={12} />
                         </button>
@@ -378,7 +380,7 @@ export function PlannerScreen() {
                     isCurrent && index === today ? "is-today" : ""
                   }`}
                   onClick={() => setSelectedDay(index)}
-                  key={day.short}
+                  key={index}
                   aria-label={`${day.label} ${dates[index].getDate()}`}
                 >
                   <span>{day.letter}</span>
@@ -392,12 +394,20 @@ export function PlannerScreen() {
             <div>
               <span>{WEEKDAYS[selectedDay].label}</span>
               <strong>
-                {dayAgenda.length} {dayAgenda.length === 1 ? "block" : "blocks"} planned
+                {t("{n} planned", { n: dayAgenda.length })}
               </strong>
             </div>
-            <button onClick={() => openNewEvent({ day: selectedDay }, viewWeek)}>
-              <Plus size={16} /> Add
+            <button onClick={() => setChoosing(true)}>
+              <Plus size={16} /> {t("Add")}
             </button>
+            {choosing && (
+              <AddChooser
+                className="from-agenda"
+                prefill={{ day: selectedDay }}
+                weekStart={viewWeek}
+                onClose={() => setChoosing(false)}
+              />
+            )}
           </div>
           <div className="mobile-agenda-list">
             {dayAgenda.map((event) => {
@@ -419,7 +429,7 @@ export function PlannerScreen() {
                   <i />
                   <div className="mobile-event-copy">
                     <strong>
-                      {done && <Check size={11} strokeWidth={3} />} {event.title}
+                      {done ? <Check size={11} strokeWidth={3} /> : <TypeIcon type={event.type} size={12} />} {event.title}
                     </strong>
                     <span>
                       {event.detail ? `${event.detail} · ` : ""}
@@ -433,7 +443,7 @@ export function PlannerScreen() {
                         e.stopPropagation()
                         deleteEvent(event.id)
                       }}
-                      aria-label={`Delete ${event.title}`}
+                      aria-label={t("Delete {title}", { title: event.title })}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -446,11 +456,11 @@ export function PlannerScreen() {
             {dayAgenda.length === 0 && (
               <button
                 className="mobile-empty-day"
-                onClick={() => openNewEvent({ day: selectedDay }, viewWeek)}
+                onClick={() => setChoosing(true)}
               >
                 <Sparkles size={18} />
-                <strong>A clear day</strong>
-                <span>Add a study block or take time to recharge.</span>
+                <strong>{t("A clear day")}</strong>
+                <span>{t("Add study time or take time to recharge.")}</span>
               </button>
             )}
           </div>
@@ -462,24 +472,27 @@ export function PlannerScreen() {
         <span>
           {suggestion ? (
             <>
-              <strong>Flow tip:</strong> {WEEKDAYS[suggestion.day].label} has the most breathing
-              room — {formatTime(suggestion.start)} is open for a{" "}
-              {formatHours(suggestion.duration)}-hour focus session.
+              <strong>{t("Flow tip:")}</strong>{" "}
+              {t("{day} has the most breathing room — {time} is open for a {hours}-hour study session.", {
+                day: WEEKDAYS[suggestion.day].label,
+                time: formatTime(suggestion.start),
+                hours: formatHours(suggestion.duration),
+              })}
             </>
           ) : weekOffset < 0 ? (
             <>
-              <strong>Looking back:</strong> you completed {formatHours(stats.completed)} of{" "}
-              {stats.goal} focus hours this week.
+              <strong>{t("Looking back:")}</strong>{" "}
+              {t("you completed {done} of {goal} study hours this week.", { done: formatHours(stats.completed), goal: stats.goal })}
             </>
           ) : (
             <>
-              <strong>Flow tip:</strong> Your week is fully booked — protect some downtime too.
+              <strong>{t("Flow tip:")}</strong> {t("Your week is fully booked — protect some downtime too.")}
             </>
           )}
         </span>
         {suggestion && (
           <button onClick={addSuggestion}>
-            Add it <ArrowRight size={14} />
+            {t("Add it")} <ArrowRight size={14} />
           </button>
         )}
       </div>

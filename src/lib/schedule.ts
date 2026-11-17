@@ -1,4 +1,5 @@
 import { DAY_END, DAY_START, nowHours, todayIndex } from "./dates"
+import { t } from "./i18n"
 import type {
   FocusPref,
   ScheduleEvent,
@@ -180,7 +181,7 @@ export function generateSchedule({
       events.push(
         makeEvent({
           title: c.name,
-          detail: c.location || "Class",
+          detail: c.location || t("Class"),
           day,
           start: c.start,
           duration: c.duration,
@@ -193,7 +194,7 @@ export function generateSchedule({
       events.push(
         makeEvent({
           title: a.name.trim(),
-          detail: "Activity",
+          detail: t("Activity"),
           day: a.day,
           start: a.start,
           duration: a.duration,
@@ -222,8 +223,8 @@ export function generateSchedule({
       if (start !== null) {
         events.push(
           makeEvent({
-            title: `${subject.replace(/\s+(lab|ii|iii|i|101)$/i, "")} review`,
-            detail: "Focus block",
+            title: t("{subject} review", { subject: subject.replace(/\s+(lab|ii|iii|i|101)$/i, "") }),
+            detail: t("Study session"),
             day,
             start,
             duration,

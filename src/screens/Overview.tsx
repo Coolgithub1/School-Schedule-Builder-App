@@ -19,6 +19,8 @@ import { firstName } from "../lib/seed"
 import { useNow, useStore } from "../lib/store"
 import type { ScheduleEvent } from "../lib/types"
 import { ProgressRing } from "../components/ui"
+import { TypeIcon } from "../components/TypeIcon"
+import { getLang, t } from "../lib/i18n"
 
 const QUOTES = [
   "Small steps, every day, add up to remarkable progress.",
@@ -62,17 +64,17 @@ export function OverviewScreen() {
   const expected = (stats.goal * Math.min(today + 1, 5)) / 5
   const status =
     stats.pct >= 100
-      ? "Goal reached — amazing week."
+      ? t("Goal reached — amazing week.")
       : stats.completed >= expected - 0.01
-        ? "You’re right on track."
+        ? t("You’re right on track.")
         : stats.planned < stats.goal
-          ? `Plan ${formatHours(stats.goal - stats.planned)} more hrs to reach your goal.`
-          : "One focus block today keeps you on pace."
+          ? t("Plan {n} more hrs to reach your goal.", { n: formatHours(stats.goal - stats.planned) })
+          : t("One study session today keeps you on pace.")
   const maxPlanned = Math.max(1, ...stats.perDay.map((d) => d.planned))
 
   const subjects = classSubjects(data.events)
   const upcoming = data.tasks
-    .filter((t) => !t.done)
+    .filter((task) => !task.done)
     .sort((a, b) => a.due.localeCompare(b.due))
     .slice(0, 4)
 
@@ -86,18 +88,18 @@ export function OverviewScreen() {
           <h1>
             {greeting(now)}, {firstName(profile.name)}.
           </h1>
-          <p>Here’s what your week looks like at a glance.</p>
+          <p>{t("Here’s what your week looks like at a glance.")}</p>
         </div>
         <button className="button button-primary" onClick={() => navigate("planner")}>
-          <CalendarDays size={16} /> Open schedule
+          <CalendarDays size={16} /> {t("Open schedule")}
         </button>
       </div>
       <div className="overview-grid">
         <section className="overview-card today-card">
           <header>
             <div>
-              <span>{weekend ? `UP NEXT · ${WEEKDAYS[0].label.toUpperCase()}` : "TODAY"}</span>
-              <h2>{weekend ? "Enjoy your weekend" : "Your next few hours"}</h2>
+              <span>{weekend ? `${t("UP NEXT")} · ${WEEKDAYS[0].label.toLocaleUpperCase(getLang())}` : t("TODAY")}</span>
+              <h2>{weekend ? t("Enjoy your weekend") : t("Your next few hours")}</h2>
             </div>
             <strong>{focusDate.getDate()}</strong>
           </header>
@@ -105,9 +107,9 @@ export function OverviewScreen() {
             {rows.length === 0 && (
               <div className="timeline-empty">
                 <Sparkles size={18} />
-                <strong>Nothing scheduled</strong>
+                <strong>{t("Nothing scheduled")}</strong>
                 <button onClick={() => openNewEvent({ day: focusDay }, focusWeek)}>
-                  <Plus size={14} /> Add a block
+                  <TypeIcon type="study" size={14} /> {t("Add study time")}
                 </button>
               </div>
             )}
@@ -123,15 +125,15 @@ export function OverviewScreen() {
                     </span>
                     <i />
                     <div>
-                      <strong>Open focus window</strong>
-                      <small>{formatDuration(row.duration)} available</small>
+                      <strong>{t("Free time to study")}</strong>
+                      <small>{t("{d} available", { d: formatDuration(row.duration) })}</small>
                     </div>
                     <button
                       onClick={() =>
                         openNewEvent(
                           {
                             type: "study",
-                            title: "Focus session",
+                            title: t("Study session"),
                             day: focusDay,
                             start: row.start,
                             duration: Math.min(1.5, row.duration),
@@ -140,7 +142,7 @@ export function OverviewScreen() {
                           focusWeek,
                         )
                       }
-                      aria-label="Plan a focus session in this window"
+                      aria-label={t("Plan a study session in this window")}
                     >
                       <Plus size={16} />
                     </button>
@@ -163,7 +165,7 @@ export function OverviewScreen() {
                   <div>
                     <strong>
                       {event.title}
-                      {live && <em className="live-pill">Now</em>}
+                      {live && <em className="live-pill">{t("Now")}</em>}
                     </strong>
                     <small>
                       {event.detail ? `${event.detail} · ` : ""}
@@ -172,7 +174,7 @@ export function OverviewScreen() {
                   </div>
                   <button
                     onClick={() => openEvent(event.id, focusWeek)}
-                    aria-label={`Open ${event.title}`}
+                    aria-label={t("Open {title}", { title: event.title })}
                   >
                     <ChevronRight size={17} />
                   </button>
@@ -184,15 +186,13 @@ export function OverviewScreen() {
 
         <section className="overview-card focus-summary">
           <header>
-            <span>WEEKLY FOCUS</span>
-            <button onClick={() => navigate("goals")}>View goals</button>
+            <span>{t("WEEKLY STUDY")}</span>
+            <button onClick={() => navigate("goals")}>{t("View goals")}</button>
           </header>
           <div className="focus-chart">
             <ProgressRing value={stats.pct} large />
             <div>
-              <h2>
-                {formatHours(stats.completed)} of {stats.goal} hours
-              </h2>
+              <h2>{t("{done} of {goal} hours", { done: formatHours(stats.completed), goal: stats.goal })}</h2>
               <p>{status}</p>
             </div>
           </div>
@@ -201,7 +201,7 @@ export function OverviewScreen() {
               <div
                 key={index}
                 className={!weekend && index === today ? "today" : ""}
-                title={`${WEEKDAYS[index].label}: ${formatHours(d.completed)} of ${formatHours(d.planned)} hrs done`}
+                title={t("{day}: {done} of {planned} hrs done", { day: WEEKDAYS[index].label, done: formatHours(d.completed), planned: formatHours(d.planned) })}
               >
                 <i style={{ height: `${(d.planned / maxPlanned) * 100}%` }}>
                   <b style={{ height: d.planned ? `${(d.completed / d.planned) * 100}%` : 0 }} />
@@ -212,10 +212,10 @@ export function OverviewScreen() {
           </div>
           <div className="bar-legend">
             <span>
-              <i className="done" /> Completed
+              <i className="done" /> {t("Completed")}
             </span>
             <span>
-              <i /> Planned
+              <i /> {t("Planned")}
             </span>
           </div>
         </section>
@@ -223,17 +223,17 @@ export function OverviewScreen() {
         <section className="overview-card upcoming-card">
           <header>
             <div>
-              <span>UPCOMING</span>
-              <h2>Deadlines & events</h2>
+              <span>{t("UPCOMING")}</span>
+              <h2>{t("Deadlines & events")}</h2>
             </div>
-            <button onClick={() => navigate("goals")}>See all</button>
+            <button onClick={() => navigate("goals")}>{t("See all")}</button>
           </header>
           <div className="upcoming-list">
             {upcoming.length === 0 && (
               <div className="upcoming-empty">
-                <p>No deadlines coming up.</p>
+                <p>{t("No deadlines coming up.")}</p>
                 <button onClick={() => navigate("goals")}>
-                  <Plus size={14} /> Add a deadline
+                  <Plus size={14} /> {t("Add a deadline")}
                 </button>
               </div>
             )}
@@ -245,7 +245,7 @@ export function OverviewScreen() {
                   <button
                     className={`task-check ${color}`}
                     onClick={() => toggleTask(task.id)}
-                    aria-label={`Mark ${task.title} done`}
+                    aria-label={t("Mark {title} done", { title: task.title })}
                   >
                     <Check size={11} strokeWidth={3} />
                   </button>
@@ -265,14 +265,14 @@ export function OverviewScreen() {
         <section className="quote-card">
           <button
             onClick={() => setQuote((q) => (q + 1) % QUOTES.length)}
-            aria-label="Show another reminder"
-            title="Another one"
+            aria-label={t("Show another reminder")}
+            title={t("Another one")}
           >
             <RefreshCw size={15} />
           </button>
           <Sparkles size={20} />
-          <p>“{QUOTES[quote]}”</p>
-          <span>Your reminder for the week</span>
+          <p>“{t(QUOTES[quote])}”</p>
+          <span>{t("Your reminder for the week")}</span>
         </section>
       </div>
     </div>

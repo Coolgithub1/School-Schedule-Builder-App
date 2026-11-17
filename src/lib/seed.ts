@@ -1,11 +1,12 @@
 import { addDays, nowHours, todayIndex, toKey, weekKey } from "./dates"
+import { t } from "./i18n"
 import { makeEvent, uid } from "./schedule"
 import type { Profile, ScheduleEvent, SetupClass, Task } from "./types"
 
-export const CLASS_PRESETS: SetupClass[] = [
-  { id: "calc", name: "Calculus II", days: [0, 2, 4], start: 9, duration: 1.5, location: "Room B-204" },
-  { id: "hist", name: "World History", days: [1, 3], start: 10, duration: 1.5, location: "Lecture Hall 1" },
-  { id: "phys", name: "Physics Lab", days: [1], start: 13, duration: 2, location: "Science 118" },
+export const classPresets = (): SetupClass[] => [
+  { id: "calc", name: t("Calculus II"), days: [0, 2, 4], start: 9, duration: 1.5, location: t("Room B-204") },
+  { id: "hist", name: t("World History"), days: [1, 3], start: 10, duration: 1.5, location: t("Lecture Hall 1") },
+  { id: "phys", name: t("Physics Lab"), days: [1], start: 13, duration: 2, location: t("Science 118") },
 ]
 
 export const DEMO_USER = { name: "Maya Singh", email: "maya@north.edu" }
@@ -42,18 +43,18 @@ export function seedEvents(): ScheduleEvent[] {
   const today = todayIndex()
   const now = nowHours()
   const base: Parameters<typeof makeEvent>[0][] = [
-    { title: "Calculus II", detail: "Room B-204", day: 0, start: 9, duration: 1.5, type: "class" },
-    { title: "Calculus review", detail: "Practice set 4", day: 0, start: 15, duration: 1.5, type: "study" },
-    { title: "World History", detail: "Lecture Hall 1", day: 1, start: 10, duration: 1.5, type: "class" },
-    { title: "Physics Lab", detail: "Science 118", day: 1, start: 13, duration: 2, type: "class" },
-    { title: "History reading", detail: "Chapter 8", day: 1, start: 17, duration: 1, type: "study" },
-    { title: "Calculus II", detail: "Room B-204", day: 2, start: 9, duration: 1.5, type: "class" },
-    { title: "History essay outline", detail: "Library, 2nd floor", day: 2, start: 13, duration: 1.5, type: "study" },
-    { title: "Design Club", detail: "Studio 3", day: 2, start: 16, duration: 1.5, type: "activity" },
-    { title: "World History", detail: "Lecture Hall 1", day: 3, start: 10, duration: 1.5, type: "class" },
-    { title: "Physics focus", detail: "Lab report", day: 3, start: 14, duration: 1.5, type: "study" },
-    { title: "Calculus II", detail: "Room B-204", day: 4, start: 9, duration: 1.5, type: "class" },
-    { title: "Weekly reset", detail: "Plan next week", day: 4, start: 15, duration: 1, type: "study" },
+    { title: t("Calculus II"), detail: t("Room B-204"), day: 0, start: 9, duration: 1.5, type: "class" },
+    { title: t("Calculus review"), detail: t("Practice set 4"), day: 0, start: 15, duration: 1.5, type: "study" },
+    { title: t("World History"), detail: t("Lecture Hall 1"), day: 1, start: 10, duration: 1.5, type: "class" },
+    { title: t("Physics Lab"), detail: t("Science 118"), day: 1, start: 13, duration: 2, type: "class" },
+    { title: t("History reading"), detail: t("Chapter 8"), day: 1, start: 17, duration: 1, type: "study" },
+    { title: t("Calculus II"), detail: t("Room B-204"), day: 2, start: 9, duration: 1.5, type: "class" },
+    { title: t("History essay outline"), detail: t("Library, 2nd floor"), day: 2, start: 13, duration: 1.5, type: "study" },
+    { title: t("Design Club"), detail: t("Studio 3"), day: 2, start: 16, duration: 1.5, type: "activity" },
+    { title: t("World History"), detail: t("Lecture Hall 1"), day: 3, start: 10, duration: 1.5, type: "class" },
+    { title: t("Physics focus"), detail: t("Lab report"), day: 3, start: 14, duration: 1.5, type: "study" },
+    { title: t("Calculus II"), detail: t("Room B-204"), day: 4, start: 9, duration: 1.5, type: "class" },
+    { title: t("Weekly reset"), detail: t("Plan next week"), day: 4, start: 15, duration: 1, type: "study" },
   ]
   return base.map((fields) => {
     const event = makeEvent(fields)
@@ -67,9 +68,9 @@ export function seedEvents(): ScheduleEvent[] {
 export function seedTasks(): Task[] {
   const due = (n: number) => toKey(addDays(new Date(), n))
   return [
-    { id: uid(), title: "Calculus problem set 5", subject: "Calculus II", due: due(1), done: false },
-    { id: uid(), title: "Lab report draft", subject: "Physics Lab", due: due(3), done: false },
-    { id: uid(), title: "Read chapter 9", subject: "World History", due: due(6), done: false },
-    { id: uid(), title: "Essay topic proposal", subject: "World History", due: due(-2), done: true },
+    { id: uid(), title: t("Calculus problem set 5"), subject: t("Calculus II"), due: due(1), done: false },
+    { id: uid(), title: t("Lab report draft"), subject: t("Physics Lab"), due: due(3), done: false },
+    { id: uid(), title: t("Read chapter 9"), subject: t("World History"), due: due(6), done: false },
+    { id: uid(), title: t("Essay topic proposal"), subject: t("World History"), due: due(-2), done: true },
   ]
 }

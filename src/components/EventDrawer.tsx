@@ -9,9 +9,11 @@ import {
   WEEKDAYS,
   weekRangeLabel,
 } from "../lib/dates"
+import { t } from "../lib/i18n"
 import { findConflicts, isDone, uid } from "../lib/schedule"
 import { useStore, type DrawerState } from "../lib/store"
 import type { EventType, ScheduleEvent } from "../lib/types"
+import { TypeIcon, TYPE_META, typeLabel } from "./TypeIcon"
 import { Switch } from "./ui"
 
 export function EventDrawer() {
@@ -88,7 +90,7 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
     event.preventDefault()
     const title = form.title.trim()
     if (!title) {
-      setError("Give this block a name.")
+      setError(t("Give it a name, like “Calculus review”."))
       return
     }
     saveEvent({
@@ -101,8 +103,12 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
     })
     toast(
       existing
-        ? `Saved changes to “${title}”`
-        : `Added “${title}” on ${WEEKDAYS[form.day].label} at ${formatTime(form.start)}`,
+        ? t("Saved changes to “{title}”", { title })
+        : t("Added “{title}” on {day} at {time}", {
+            title,
+            day: WEEKDAYS[form.day].label,
+            time: formatTime(form.start),
+          }),
     )
     closeDrawer()
   }
@@ -110,30 +116,50 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
   return (
     <div className="drawer-backdrop" onMouseDown={closeDrawer}>
       <aside
-        className="event-drawer"
+        className={`event-drawer drawer-${form.type}`}
         role="dialog"
         aria-modal="true"
-        aria-label={existing ? "Edit time block" : "New time block"}
+        aria-label={existing ? t("Edit") : t(TYPE_META[form.type].title)}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header>
           <div>
-            <span>{existing ? "EDIT TIME BLOCK" : "NEW TIME BLOCK"}</span>
-            <h2>{existing ? existing.title : "Add to your week"}</h2>
+            <span className={`drawer-kicker type-${form.type}`}>
+              <TypeIcon type={form.type} size={13} /> {existing ? t("Edit") : t("Add to your week")}
+            </span>
+            <h2>{existing ? existing.title : t(TYPE_META[form.type].title)}</h2>
           </div>
-          <button className="icon-button" onClick={closeDrawer} aria-label="Close">
+          <button className="icon-button" onClick={closeDrawer} aria-label={t("Close")}>
             <X size={19} />
           </button>
         </header>
 
         <form className="drawer-shell" onSubmit={submit} noValidate>
           <div className="drawer-form">
+            <div className="field-group">
+              {t("What is it?")}
+              <div className="segmented type-segmented" role="radiogroup" aria-label={t("Type")}>
+                {(["class", "study", "activity"] as EventType[]).map((item) => (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={form.type === item}
+                    className={`type-${item} ${form.type === item ? "active" : ""}`}
+                    onClick={() => changeType(item)}
+                    key={item}
+                  >
+                    <TypeIcon type={item} size={16} /> {typeLabel(item)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <label>
-              Title
+              {t("Title")}
               <input
                 autoFocus={!existing}
                 value={form.title}
-                placeholder="e.g. Chemistry review"
+                placeholder={form.type === "class" ? t("e.g. VCD 421") : form.type === "study" ? t("e.g. Chemistry review") : t("e.g. Design Club")}
                 onChange={(e) => {
                   update("title", e.target.value)
                   if (error) setError("")
@@ -142,40 +168,22 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
             </label>
             {error && <p className="form-error">{error}</p>}
 
-            <div className="field-group">
-              Type
-              <div className="segmented" role="radiogroup" aria-label="Block type">
-                {(["class", "study", "activity"] as EventType[]).map((item) => (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={form.type === item}
-                    className={form.type === item ? "active" : ""}
-                    onClick={() => changeType(item)}
-                    key={item}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="form-row">
               <label>
-                Day
+                {t("Day")}
                 <select
                   value={form.day}
                   onChange={(e) => update("day", Number(e.target.value))}
                 >
                   {WEEKDAYS.map((d, i) => (
-                    <option value={i} key={d.short}>
+                    <option value={i} key={i}>
                       {d.label}
                     </option>
                   ))}
                 </select>
               </label>
               <label>
-                Start time
+                {t("Start time")}
                 <select
                   value={form.start}
                   onChange={(e) => changeStart(Number(e.target.value))}
@@ -191,7 +199,7 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
 
             <div className="form-row">
               <label>
-                Length
+                {t("Length")}
                 <select
                   value={form.duration}
                   onChange={(e) => update("duration", Number(e.target.value))}
@@ -204,10 +212,10 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
                 </select>
               </label>
               <label>
-                Location
+                {t("Location")}
                 <input
                   value={form.detail}
-                  placeholder="Room, library, online…"
+                  placeholder={t("Room, library, online…")}
                   onChange={(e) => update("detail", e.target.value)}
                 />
               </label>
@@ -215,16 +223,18 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
 
             <div className="toggle-row">
               <div>
-                <strong>Repeat every week</strong>
+                <strong>{t("Repeat every week")}</strong>
                 <small>
                   {form.recurring
-                    ? "Shows up on your schedule each week"
-                    : `Only the week of ${weekRangeLabel(existing?.weekStart ?? drawer.weekStart, false)}`}
+                    ? t("Shows up on your schedule each week")
+                    : t("Only the week of {range}", {
+                        range: weekRangeLabel(existing?.weekStart ?? drawer.weekStart, false),
+                      })}
                 </small>
               </div>
               <Switch
                 checked={form.recurring}
-                label="Repeat every week"
+                label={t("Repeat every week")}
                 onChange={(next) => {
                   setRecurringTouched(true)
                   update("recurring", next)
@@ -233,10 +243,10 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
             </div>
 
             <label>
-              Notes
+              {t("Notes")}
               <textarea
                 value={form.notes}
-                placeholder="Chapters to cover, materials to bring…"
+                placeholder={t("Chapters to cover, materials to bring…")}
                 onChange={(e) => update("notes", e.target.value)}
               />
             </label>
@@ -245,8 +255,8 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
               <p className="conflict-note">
                 <AlertTriangle size={16} />
                 <span>
-                  Overlaps with <strong>{conflicts.map((c) => c.title).join(", ")}</strong>.
-                  You can still save it, or pick another time.
+                  {t("Overlaps with")} <strong>{conflicts.map((c) => c.title).join(", ")}</strong>.{" "}
+                  {t("You can still save it, or pick another time.")}
                 </span>
               </p>
             )}
@@ -258,7 +268,7 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
                 onClick={() => toggleDone(existing.id, drawer.weekStart)}
               >
                 <Check size={16} />
-                {done ? "Completed this week — tap to undo" : "Mark this focus session done"}
+                {done ? t("Completed this week — tap to undo") : t("Mark this study session done")}
               </button>
             )}
           </div>
@@ -273,15 +283,21 @@ function EventDrawerForm({ drawer }: { drawer: DrawerState }) {
                   closeDrawer()
                 }}
               >
-                <Trash2 size={15} /> Delete
+                <Trash2 size={15} /> {t("Delete")}
               </button>
             )}
             <span className="footer-spacer" />
             <button type="button" className="button button-ghost" onClick={closeDrawer}>
-              Cancel
+              {t("Cancel")}
             </button>
-            <button type="submit" className="button button-primary">
-              {existing ? "Save changes" : "Add to schedule"}
+            <button type="submit" className={`button button-primary submit-${form.type}`}>
+              {existing ? (
+                t("Save changes")
+              ) : (
+                <>
+                  <TypeIcon type={form.type} size={16} /> {t(TYPE_META[form.type].add)}
+                </>
+              )}
             </button>
           </footer>
         </form>

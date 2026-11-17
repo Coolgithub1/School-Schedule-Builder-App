@@ -7,9 +7,11 @@ import { OverviewScreen } from "./screens/Overview"
 import { PlannerScreen } from "./screens/Planner"
 import { SetupScreen } from "./screens/Setup"
 import { WelcomeScreen } from "./screens/Welcome"
+import { LanguageScreen } from "./components/Language"
 
 function Router() {
   const { screen, data } = useStore()
+  if (screen === "language") return <LanguageScreen />
   if (screen === "auth") return <AuthScreen />
   if (screen === "welcome" || !data.profile) return <WelcomeScreen />
   if (screen === "setup") return <SetupScreen />

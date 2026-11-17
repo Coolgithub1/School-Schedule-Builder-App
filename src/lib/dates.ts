@@ -1,15 +1,28 @@
+import { isTr, t } from "./i18n"
+
 export const DAY_START = 8
 export const DAY_END = 20
 export const DAY_SPAN = DAY_END - DAY_START
 export const HOURS = Array.from({ length: DAY_SPAN }, (_, i) => DAY_START + i)
 
-export const WEEKDAYS = [
-  { short: "MON", letter: "M", label: "Monday" },
-  { short: "TUE", letter: "T", label: "Tuesday" },
-  { short: "WED", letter: "W", label: "Wednesday" },
-  { short: "THU", letter: "T", label: "Thursday" },
-  { short: "FRI", letter: "F", label: "Friday" },
-]
+const DAY_NAMES = {
+  en: [
+    ["MON", "M", "Monday"], ["TUE", "T", "Tuesday"], ["WED", "W", "Wednesday"],
+    ["THU", "T", "Thursday"], ["FRI", "F", "Friday"],
+  ],
+  tr: [
+    ["PZT", "P", "Pazartesi"], ["SAL", "S", "Salı"], ["ÇAR", "Ç", "Çarşamba"],
+    ["PER", "P", "Perşembe"], ["CUM", "C", "Cuma"],
+  ],
+}
+const dayName = (i: number) => DAY_NAMES[isTr() ? "tr" : "en"][i]
+
+/** Weekday names; getters follow the active language. */
+export const WEEKDAYS = [0, 1, 2, 3, 4].map((i) => ({
+  get short() { return dayName(i)[0] },
+  get letter() { return dayName(i)[1] },
+  get label() { return dayName(i)[2] },
+}))
 
 /** Start-time choices: 8:00 AM … 7:30 PM in half-hour steps */
 export const TIME_OPTIONS = Array.from(
@@ -18,10 +31,12 @@ export const TIME_OPTIONS = Array.from(
 )
 export const DURATION_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4]
 
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-]
+const MONTHS = {
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  tr: ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"],
+}
+const month = (i: number) => MONTHS[isTr() ? "tr" : "en"][i]
+const locale = () => (isTr() ? "tr-TR" : "en-US")
 
 const pad = (n: number) => String(n).padStart(2, "0")
 
@@ -68,48 +83,52 @@ export function nowHours(date = new Date()) {
   return date.getHours() + date.getMinutes() / 60
 }
 
+/** "2:30 PM" in English, "14:30" in Turkish (24-hour clock). */
 export function formatTime(h: number) {
   const hour = Math.floor(h)
   const minutes = Math.round((h - hour) * 60)
+  if (isTr()) return `${pad(hour)}:${pad(minutes)}`
   const h12 = hour % 12 === 0 ? 12 : hour % 12
   return `${h12}:${pad(minutes)} ${hour >= 12 ? "PM" : "AM"}`
 }
 
 export function timeParts(h: number) {
-  const [time, suffix] = formatTime(h).split(" ")
+  const [time, suffix = ""] = formatTime(h).split(" ")
   return { time, suffix }
 }
 
 export function hourLabel(h: number) {
+  if (isTr()) return `${pad(h)}:00`
   const h12 = h % 12 === 0 ? 12 : h % 12
   return `${h12} ${h >= 12 ? "PM" : "AM"}`
 }
 
 export function formatHours(n: number) {
-  return Number.isInteger(n) ? String(n) : n.toFixed(1)
+  const s = Number.isInteger(n) ? String(n) : n.toFixed(1)
+  return isTr() ? s.replace(".", ",") : s
 }
 
 export function formatDuration(d: number) {
-  if (d < 1) return `${Math.round(d * 60)} min`
-  return `${formatHours(d)} hr${d === 1 ? "" : "s"}`
+  if (d < 1) return t("{n} min", { n: Math.round(d * 60) })
+  return d === 1 ? t("1 hr") : t("{n} hrs", { n: formatHours(d) })
 }
 
 export function weekRangeLabel(wk: string, withYear = true) {
   const start = fromKey(wk)
   const end = addDays(start, 4)
-  const sm = MONTHS[start.getMonth()]
-  const em = MONTHS[end.getMonth()]
-  const range =
-    sm === em
-      ? `${sm} ${start.getDate()}–${end.getDate()}`
-      : `${sm} ${start.getDate()} – ${em} ${end.getDate()}`
-  return withYear ? `${range}, ${end.getFullYear()}` : range
+  const sm = month(start.getMonth())
+  const em = month(end.getMonth())
+  let range: string
+  if (isTr())
+    range = sm === em ? `${start.getDate()}–${end.getDate()} ${em}` : `${start.getDate()} ${sm} – ${end.getDate()} ${em}`
+  else range = sm === em ? `${sm} ${start.getDate()}–${end.getDate()}` : `${sm} ${start.getDate()} – ${em} ${end.getDate()}`
+  return withYear ? `${range}${isTr() ? "" : ","} ${end.getFullYear()}` : range
 }
 
 export function relativeWeekLabel(offset: number, wk: string) {
-  if (offset === 0) return "This week"
-  if (offset === 1) return "Next week"
-  if (offset === -1) return "Last week"
+  if (offset === 0) return t("This week")
+  if (offset === 1) return t("Next week")
+  if (offset === -1) return t("Last week")
   return weekRangeLabel(wk, false)
 }
 
@@ -120,26 +139,26 @@ export function daysUntil(key: string) {
 
 export function dueLabel(key: string) {
   const n = daysUntil(key)
-  if (n < -1) return `${-n} days late`
-  if (n === -1) return "Yesterday"
-  if (n === 0) return "Today"
-  if (n === 1) return "Tomorrow"
+  if (n < -1) return t("{n} days late", { n: -n })
+  if (n === -1) return t("Yesterday")
+  if (n === 0) return t("Today")
+  if (n === 1) return t("Tomorrow")
   const date = fromKey(key)
-  if (n < 7) return date.toLocaleDateString("en-US", { weekday: "long" })
-  return `${MONTHS[date.getMonth()]} ${date.getDate()}`
+  if (n < 7) return date.toLocaleDateString(locale(), { weekday: "long" })
+  return isTr() ? `${date.getDate()} ${month(date.getMonth())}` : `${month(date.getMonth())} ${date.getDate()}`
 }
 
 export function longDateLabel(date = new Date()) {
   return date
-    .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
-    .toUpperCase()
+    .toLocaleDateString(locale(), { weekday: "long", month: "long", day: "numeric" })
+    .toLocaleUpperCase(locale())
 }
 
 export function greeting(date = new Date()) {
   const h = date.getHours()
-  if (h < 12) return "Good morning"
-  if (h < 17) return "Good afternoon"
-  return "Good evening"
+  if (h < 12) return t("Good morning")
+  if (h < 17) return t("Good afternoon")
+  return t("Good evening")
 }
 
 export function timeZoneLabel() {

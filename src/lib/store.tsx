@@ -22,8 +22,11 @@ import type {
   Task,
 } from "./types"
 
+import { setLang, t, type Lang } from "./i18n"
+
 const STORAGE_KEY = "studyflow:v1"
 const EMPTY: AppData = {
+  language: null,
   profile: null,
   signedIn: false,
   onboarded: false,
@@ -44,7 +47,8 @@ function loadData(): AppData {
   }
 }
 
-function initialScreen(data: AppData): Screen {
+export function initialScreen(data: AppData): Screen {
+  if (!data.language) return "language"
   if (!data.signedIn || !data.profile) return "welcome"
   return data.onboarded ? "overview" : "setup"
 }
@@ -67,6 +71,8 @@ type SignInResult = { ok: true; next: Screen } | { ok: false; error: string }
 
 type StoreValue = {
   data: AppData
+  language: Lang
+  setLanguage: (lang: Lang) => void
   profile: Profile
   screen: Screen
   navigate: (screen: Screen) => void
@@ -120,6 +126,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(loadData)
   const dataRef = useRef(data)
   dataRef.current = data
+  setLang(data.language ?? "en")
 
   const [screen, setScreen] = useState<Screen>(() => initialScreen(data))
   const [authMode, setAuthMode] = useState<AuthMode>("register")
@@ -199,10 +206,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         return {
           ok: false,
-          error: `No account found for ${email}. Try ${current.profile.email}, or create a new account.`,
+          error: t("No account found for {email}. Try {existing}, or create a new account.", { email, existing: current.profile.email }),
         }
       }
       setData({
+        language: current.language,
         profile: createProfile(input.name?.trim() || nameFromEmail(email), email),
         signedIn: true,
         onboarded: true,
@@ -212,6 +220,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ok: true, next: "overview" }
     }
     setData({
+      language: current.language,
       profile: createProfile(input.name?.trim() || nameFromEmail(email), email),
       signedIn: true,
       onboarded: false,
@@ -228,7 +237,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPaletteOpen(false)
     setWeekOffset(0)
     navigate("welcome")
-    toast("You’re signed out. Your schedule is saved on this device.")
+    toast(t("You’re signed out. Your schedule is saved on this device."))
   }
 
   const completeSetup: StoreValue["completeSetup"] = ({ events, studyGoal, focusPref }) => {
@@ -260,8 +269,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const event = dataRef.current.events.find((e) => e.id === id)
     if (!event) return
     setData((d) => ({ ...d, events: d.events.filter((e) => e.id !== id) }))
-    toast(`Removed “${event.title}”`, {
-      label: "Undo",
+    toast(t("Removed “{title}”", { title: event.title }), {
+      label: t("Undo"),
       run: () => setData((d) => ({ ...d, events: [...d.events, event] })),
     })
   }
@@ -283,11 +292,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       events: d.events.map((e) => (e.id === id ? { ...e, day, start } : e)),
     }))
     toast(
-      `Moved “${event.title}” to ${WEEKDAYS[day].label}, ${formatTime(start)}${
-        clash ? ` — overlaps ${clash.title}` : ""
-      }`,
+      t("Moved “{title}” to {day}, {time}", { title: event.title, day: WEEKDAYS[day].label, time: formatTime(start) }) +
+        (clash ? t(" — overlaps {title}", { title: clash.title }) : ""),
       {
-        label: "Undo",
+        label: t("Undo"),
         run: () =>
           setData((d) => ({
             ...d,
@@ -315,7 +323,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const addTask = (task: Task) => {
     setData((d) => ({ ...d, tasks: [...d.tasks, task] }))
-    toast(`Added “${task.title}”`)
+    toast(t("Added “{title}”", { title: task.title }))
   }
 
   const toggleTask = (id: string) => {
@@ -326,8 +334,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       tasks: d.tasks.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
     }))
     if (!task.done)
-      toast(`Nice work — “${task.title}” is done`, {
-        label: "Undo",
+      toast(t("Nice work — “{title}” is done", { title: task.title }), {
+        label: t("Undo"),
         run: () =>
           setData((d) => ({
             ...d,
@@ -340,8 +348,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const task = dataRef.current.tasks.find((t) => t.id === id)
     if (!task) return
     setData((d) => ({ ...d, tasks: d.tasks.filter((t) => t.id !== id) }))
-    toast(`Deleted “${task.title}”`, {
-      label: "Undo",
+    toast(t("Deleted “{title}”", { title: task.title }), {
+      label: t("Undo"),
       run: () => setData((d) => ({ ...d, tasks: [...d.tasks, task] })),
     })
   }
@@ -354,11 +362,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       tasks: seedTasks(),
     }))
     setWeekOffset(0)
-    toast("Sample schedule restored")
+    toast(t("Sample schedule restored"))
+  }
+
+  const setLanguage = (lang: Lang) => {
+    setLang(lang)
+    setData((d) => ({ ...d, language: lang }))
   }
 
   const value: StoreValue = {
     data,
+    language: data.language ?? "en",
+    setLanguage,
     profile: data.profile ?? createProfile("Student", ""),
     screen,
     navigate,

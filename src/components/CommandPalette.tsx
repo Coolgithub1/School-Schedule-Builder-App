@@ -12,7 +12,9 @@ import {
 } from "lucide-react"
 import { dueLabel, formatTime, WEEKDAYS } from "../lib/dates"
 import { eventsForWeek } from "../lib/schedule"
+import { getLang, t } from "../lib/i18n"
 import { useStore } from "../lib/store"
+import { TypeIcon } from "./TypeIcon"
 
 type Item = {
   id: string
@@ -47,12 +49,13 @@ function Palette() {
 
   const items = useMemo<Item[]>(() => {
     const actions: Item[] = [
-      { id: "a-add", group: "Actions", label: "Add a time block", hint: "Class, study session or activity", icon: <Plus size={16} />, run: () => openNewEvent() },
-      { id: "a-sched", group: "Actions", label: "Go to Schedule", hint: "Weekly calendar", icon: <CalendarDays size={16} />, run: () => navigate("planner") },
-      { id: "a-over", group: "Actions", label: "Go to Overview", hint: "Today at a glance", icon: <LayoutDashboard size={16} />, run: () => navigate("overview") },
-      { id: "a-goals", group: "Actions", label: "Go to Study goals", hint: "Focus hours and deadlines", icon: <Target size={16} />, run: () => navigate("goals") },
-      { id: "a-today", group: "Actions", label: "Jump to this week", hint: "Reset the calendar to today", icon: <CalendarCheck size={16} />, run: () => { setWeekOffset(0); navigate("planner") } },
-      { id: "a-set", group: "Actions", label: "Open settings", hint: "Profile, goals and reminders", icon: <Settings2 size={16} />, run: () => setSettingsOpen(true) },
+      { id: "a-class", group: "Actions", label: t("Add class"), hint: t("A lecture, lab or section"), icon: <TypeIcon type="class" />, tone: "class", run: () => openNewEvent({ type: "class", recurring: true }) },
+      { id: "a-study", group: "Actions", label: t("Add study time"), hint: t("Time to review or do homework"), icon: <TypeIcon type="study" />, tone: "study", run: () => openNewEvent({ type: "study" }) },
+      { id: "a-sched", group: "Actions", label: t("Go to Schedule"), hint: t("Weekly calendar"), icon: <CalendarDays size={16} />, run: () => navigate("planner") },
+      { id: "a-over", group: "Actions", label: t("Go to Overview"), hint: t("Today at a glance"), icon: <LayoutDashboard size={16} />, run: () => navigate("overview") },
+      { id: "a-goals", group: "Actions", label: t("Go to Study goals"), hint: t("Study hours and deadlines"), icon: <Target size={16} />, run: () => navigate("goals") },
+      { id: "a-today", group: "Actions", label: t("Jump to this week"), hint: t("Reset the calendar to today"), icon: <CalendarCheck size={16} />, run: () => { setWeekOffset(0); navigate("planner") } },
+      { id: "a-set", group: "Actions", label: t("Open settings"), hint: t("Profile, language, goals and reminders"), icon: <Settings2 size={16} />, run: () => setSettingsOpen(true) },
     ]
     const events: Item[] = eventsForWeek(data.events, viewWeek)
       .sort((a, b) => a.day - b.day || a.start - b.start)
@@ -61,7 +64,7 @@ function Palette() {
         group: "Schedule",
         label: e.title,
         hint: `${WEEKDAYS[e.day].label} · ${formatTime(e.start)}${e.detail ? ` · ${e.detail}` : ""}${e.notes ? ` · ${e.notes}` : ""}`,
-        icon: <BookOpen size={16} />,
+        icon: <TypeIcon type={e.type} />,
         tone: e.type,
         run: () => {
           navigate("planner")
@@ -69,13 +72,13 @@ function Palette() {
         },
       }))
     const tasks: Item[] = data.tasks
-      .filter((t) => !t.done)
+      .filter((task) => !task.done)
       .sort((a, b) => a.due.localeCompare(b.due))
-      .map((t) => ({
-        id: t.id,
+      .map((task) => ({
+        id: task.id,
         group: "Deadlines",
-        label: t.title,
-        hint: `${t.subject} · due ${dueLabel(t.due).toLowerCase()}`,
+        label: task.title,
+        hint: t("{subject} · due {when}", { subject: task.subject, when: dueLabel(task.due).toLocaleLowerCase(getLang()) }),
         icon: <ClipboardList size={16} />,
         tone: "task",
         run: () => navigate("goals"),
@@ -108,7 +111,7 @@ function Palette() {
         className="palette"
         role="dialog"
         aria-modal="true"
-        aria-label="Search"
+        aria-label={t("Search")}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="palette-input">
@@ -116,7 +119,7 @@ function Palette() {
           <input
             autoFocus
             value={query}
-            placeholder="Search classes, study blocks, deadlines…"
+            placeholder={t("Search classes, study time, deadlines…")}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") {
@@ -135,14 +138,14 @@ function Palette() {
         </div>
         <div className="palette-results" ref={listRef}>
           {results.length === 0 && (
-            <p className="palette-empty">No matches for “{query}”.</p>
+            <p className="palette-empty">{t("No matches for “{query}”.", { query })}</p>
           )}
           {results.map((item, index) => {
             const header = item.group !== lastGroup ? item.group : null
             lastGroup = item.group
             return (
               <div key={item.id}>
-                {header && <div className="palette-group">{header}</div>}
+                {header && <div className="palette-group">{t(header)}</div>}
                 <button
                   data-index={index}
                   className={`palette-item ${item.tone ? `tone-${item.tone}` : ""} ${
