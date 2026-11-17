@@ -24,10 +24,12 @@ import { CLASS_PRESETS } from "../lib/seed"
 import { useStore } from "../lib/store"
 import type { FocusPref, SetupActivity, SetupClass } from "../lib/types"
 import { Logo } from "../components/ui"
+import { ScreenshotImport } from "../components/ScreenshotImport"
+import type { ScheduleImport } from "../lib/scheduleOcr"
 
 const dayName = (d: number) => WEEKDAYS[d].label.slice(0, 3)
 const describeClass = (c: SetupClass) =>
-  `${c.days.map(dayName).join(" · ")}, ${formatTime(c.start)}${c.location ? ` · ${c.location}` : ""}`
+  `${c.days.map(dayName).join(" · ")}, ${formatTime(c.start)} – ${formatTime(c.start + c.duration)}${c.location ? ` · ${c.location}` : ""}`
 
 export function SetupScreen() {
   const { navigate, completeSetup, profile, toast } = useStore()
@@ -41,6 +43,7 @@ export function SetupScreen() {
     { id: uid(), name: "Design Club", day: 2, start: 16, duration: 1.5 },
   ])
   const [error, setError] = useState("")
+  const [imported, setImported] = useState<ScheduleImport | null>(null)
 
   const chosen = classes.filter((c) => selected.includes(c.id))
   const blockCount = Math.max(1, Math.round(studyHours / 1.5))
@@ -53,6 +56,15 @@ export function SetupScreen() {
   const removeClass = (id: string) => {
     setClasses((list) => list.filter((c) => c.id !== id))
     setSelected((list) => list.filter((x) => x !== id))
+  }
+
+  const applyImport = (result: ScheduleImport) => {
+    setClasses(result.classes)
+    setSelected(result.classes.map((c) => c.id))
+    setImported(result)
+    setAddingClass(false)
+    setError("")
+    toast(`Read ${result.classes.length} classes from your screenshot`)
   }
 
   const updateActivity = (id: string, patch: Partial<SetupActivity>) =>
@@ -108,8 +120,12 @@ export function SetupScreen() {
               <span className="question-number">01</span>
               <div>
                 <h1>What are you taking?</h1>
-                <p>Select your classes, or add your own.</p>
+                <p>Upload your schedule screenshot, or pick classes yourself.</p>
               </div>
+            </div>
+            <ScreenshotImport onImported={applyImport} />
+            <div className="choice-divider">
+              <span>{imported ? "Your classes from the screenshot" : "or pick your classes manually"}</span>
             </div>
             <div className="choice-list">
               {classes.map((item, index) => {

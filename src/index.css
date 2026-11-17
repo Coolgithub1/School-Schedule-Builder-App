@@ -602,3 +602,41 @@ body.is-dragging-event, body.is-dragging-event * { cursor: grabbing !important; 
 /* Inside the phone mockup: hide desktop scrollbars so scrolling looks native */
 html.embedded, html.embedded * { scrollbar-width: none; }
 html.embedded ::-webkit-scrollbar { display: none; }
+
+/* ===================== Screenshot import (setup step 1) ===================== */
+.import-card { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 14px; padding: 18px; border: 1px solid #cfe6a5; border-radius: 16px; background: linear-gradient(135deg, #f7fde9 0%, #fffefb 70%); transition: border-color .2s, box-shadow .2s; }
+.import-card.is-dragging { border-color: #98be51; border-style: dashed; box-shadow: 0 0 0 4px rgba(217,249,157,.5); }
+.import-card.is-error { border-color: #efcfc7; background: #fffaf8; }
+.import-art { display: grid; flex: 0 0 auto; grid-template-columns: repeat(5, 1fr); gap: 3px; width: 92px; padding: 30px 7px 8px; border: 2px solid #20201e; border-radius: 14px; background: #fff; position: relative; transform: rotate(-3deg); box-shadow: 0 8px 18px rgba(32,32,30,.12); }
+.import-art-head { position: absolute; top: 0; left: 0; right: 0; height: 22px; border-radius: 11px 11px 0 0; background: #1a79d1; }
+.import-art i { height: 15px; border-radius: 3px; background: #efeee8; }
+.import-art i.on { background: #cfe3f8; box-shadow: inset 0 -2px 0 #1a79d1; }
+.import-copy { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 6px; }
+.import-kicker { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 99px; background: var(--lime); color: #33451c; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.import-copy strong { font: 800 17px 'Manrope'; letter-spacing: -.3px; }
+.import-copy p { color: #6b6a64; font-size: 13px; line-height: 1.5; }
+.import-copy p b { color: var(--ink); }
+.import-button { min-height: 42px; margin-top: 6px; font-size: 13px; }
+.import-copy small, .import-status small { display: flex; align-items: center; gap: 5px; color: #7e8a64; font-size: 11px; font-weight: 600; line-height: 1.4; }
+.import-status { display: flex; gap: 16px; align-items: flex-start; width: 100%; }
+.import-status img { flex: 0 0 auto; width: 64px; height: 112px; object-fit: cover; object-position: top; border: 2px solid #20201e; border-radius: 10px; }
+.import-status > div { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 7px; }
+.import-status strong { display: flex; align-items: center; gap: 6px; font: 800 16px 'Manrope'; }
+.import-ok { color: #3f5c1a; }
+.import-error { color: #a4402f; }
+.import-bar { height: 8px; overflow: hidden; border-radius: 8px; background: #e7ecd9; }
+.import-bar span { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, #98be51, #bfe978); transition: width .3s ease; }
+.import-warning { color: #9a6420 !important; }
+.import-again { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding-left: 0; font-size: 12px; }
+.button.import-again { min-height: 38px; padding: 0 14px; }
+.choice-divider { display: flex; align-items: center; gap: 12px; margin: 6px 0 12px; color: #9a978f; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.choice-divider::before, .choice-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+@media (max-width: 620px) {
+  .import-card { gap: 14px; padding: 15px; }
+  .import-art { width: 70px; padding: 24px 5px 6px; gap: 2px; }
+  .import-art-head { height: 17px; }
+  .import-art i { height: 11px; }
+  .import-copy strong { font-size: 16px; }
+  .import-copy p { font-size: 12px; }
+}
