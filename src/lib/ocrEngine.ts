@@ -40,11 +40,12 @@ export async function createDeviceOcr(onProgress?: (p: OcrProgress) => void) {
   })
 
   const engine: OcrEngine = {
-    async recognize(image, { psm, rect, whitelist }) {
+    async recognize(image, { psm, rect, whitelist, threshold }) {
       await worker.setParameters({
         tessedit_pageseg_mode: psm as never,
         tessedit_char_whitelist: whitelist ?? "",
-      })
+        thresholding_method: { global: "0", "local-otsu": "1", sauvola: "2" }[threshold ?? "global"],
+      } as never)
       const { data } = await worker.recognize(image as File, rect ? { rectangle: rect } : {}, { blocks: true })
       return flatten(data.blocks as unknown as TBlock[])
     },

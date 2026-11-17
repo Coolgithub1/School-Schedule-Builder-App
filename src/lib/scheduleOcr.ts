@@ -14,6 +14,11 @@ export type OcrRequest = {
   psm: string
   rect?: { left: number; top: number; width: number; height: number }
   whitelist?: string
+  /**
+   * Binarisation: "global" = Tesseract's default Otsu; "sauvola" and "local-otsu" are adaptive
+   * and cope with dark borders, overlays and uneven lighting.
+   */
+  threshold?: "global" | "sauvola" | "local-otsu"
 }
 export type OcrEngine = { recognize: (image: unknown, request: OcrRequest) => Promise<OcrResult> }
 
@@ -26,6 +31,8 @@ export type ScheduleImport = {
 }
 
 export class ScheduleReadError extends Error {}
+
+export const DEFAULT_PASSES: NonNullable<OcrRequest["threshold"]>[] = ["sauvola", "local-otsu"]
 
 const DAY_HEADERS: RegExp[] = [
   /^(pzt|mon)/i,
@@ -68,18 +75,23 @@ function asNumber(raw: string): string | null {
   return /^\d{3}$/.test(fixed) && /^[A-Z]?$/.test(suffix) ? fixed + suffix : null
 }
 
-/** Joins "VCD" + "421" (or a single "VCD421") into course codes with positions. */
-function findCodes(words: OcrBox[]): { code: string; x: number; y: number; h: number }[] {
-  const codes: { code: string; x: number; y: number; h: number }[] = []
+type CodeHit = { code: string; x: number; y: number; h: number; conf: number }
+
+/**
+ * Joins "VCD" + "421" (or a single "VCD421") into course codes with positions.
+ * Prefixes with no readable number beside them are returned as orphans for a closer look.
+ */
+function findCodes(words: OcrBox[], orphans: OcrBox[] = []): CodeHit[] {
+  const codes: CodeHit[] = []
   const used = new Set<number>()
   const sorted = [...words].sort((a, b) => a.y0 - b.y0 || a.x0 - b.x0)
   sorted.forEach((w, i) => {
-    if (used.has(i) || w.confidence < 45) return
+    if (used.has(i) || w.confidence < 25) return
     const h = w.y1 - w.y0
     const joined = clean(w.text).match(/^([A-Za-z]{2,5})(\d{3}[A-Za-z]?)$/)
     if (joined) {
       const c = center(w)
-      codes.push({ code: `${joined[1].toUpperCase()} ${joined[2].toUpperCase()}`, x: c.x, y: c.y, h })
+      codes.push({ code: `${joined[1].toUpperCase()} ${joined[2].toUpperCase()}`, x: c.x, y: c.y, h, conf: w.confidence })
       used.add(i)
       return
     }
@@ -93,15 +105,58 @@ function findCodes(words: OcrBox[]): { code: string; x: number; y: number; h: nu
         n.x0 - w.x1 < h * 2.5 &&
         Math.abs(center(n).y - center(w).y) < h * 0.6,
     )
-    if (j === -1) return
+    if (j === -1) {
+      orphans.push(w)
+      return
+    }
     const number = asNumber(sorted[j].text)
-    if (!number) return
+    if (!number) {
+      orphans.push(w)
+      return
+    }
     used.add(i)
     used.add(j)
     const n = sorted[j]
-    codes.push({ code: `${prefix} ${number}`, x: (w.x0 + n.x1) / 2, y: (center(w).y + center(n).y) / 2, h })
+    codes.push({
+      code: `${prefix} ${number}`,
+      x: (w.x0 + n.x1) / 2,
+      y: (center(w).y + center(n).y) / 2,
+      h,
+      conf: Math.min(w.confidence, n.confidence),
+    })
   })
   return codes
+}
+
+const STRONG = 60
+
+/**
+ * Fixes one-letter misreads ("VED 321" → "VCD 321") by snapping to a more frequent,
+ * confidently read code with the same number, and drops weak reads that match nothing.
+ */
+function snapCodes(hits: CodeHit[]): CodeHit[] {
+  const counts = new Map<string, number>()
+  for (const h of hits) if (h.conf >= STRONG) counts.set(h.code, (counts.get(h.code) ?? 0) + 1)
+  const snapTarget = (code: string) => {
+    const [prefix, number] = code.split(" ")
+    let best: string | null = null
+    let bestCount = counts.get(code) ?? 0
+    for (const [other, count] of counts) {
+      const [op, on] = other.split(" ")
+      if (other === code || on !== number || op.length !== prefix.length) continue
+      const diff = [...op].filter((ch, i) => ch !== prefix[i]).length
+      if (diff === 1 && count > bestCount) {
+        best = other
+        bestCount = count
+      }
+    }
+    return best
+  }
+  return hits.flatMap((h) => {
+    const target = snapTarget(h.code)
+    if (target) return [{ ...h, code: target }]
+    return h.conf >= STRONG || counts.has(h.code) ? [h] : []
+  })
 }
 
 /** x-centre of each weekday column, interpolating any header OCR missed. */
@@ -193,15 +248,63 @@ export function cellsToClasses(cells: ScheduleCell[]): SetupClass[] {
   return classes.sort((a, b) => a.days[0] - b.days[0] || a.start - b.start)
 }
 
-export async function readSchedule(engine: OcrEngine, image: unknown): Promise<ScheduleImport> {
+/** Keeps one box per spot when two passes read the same text. */
+function mergeWords(a: OcrBox[], b: OcrBox[]): OcrBox[] {
+  const out = [...a]
+  for (const w of b) {
+    const c = center(w)
+    const dup = out.some((o) => clean(o.text) === clean(w.text) && Math.abs(center(o).x - c.x) < (w.y1 - w.y0) && Math.abs(center(o).y - c.y) < (w.y1 - w.y0) / 2)
+    if (!dup) out.push(w)
+  }
+  return out
+}
+
+export type ReadOptions = { passes?: NonNullable<OcrRequest["threshold"]>[] }
+
+export async function readSchedule(engine: OcrEngine, image: unknown, options: ReadOptions = {}): Promise<ScheduleImport> {
   const warnings: string[] = []
-  const first = await engine.recognize(image, { psm: "11" })
+  // Several full-page passes with different binarisation, combined. Global thresholding can
+  // lose every course code on off-centre screenshots with black edges or overlays; the
+  // adaptive passes recover them, and each pass catches cells the others misread.
+  const passes = []
+  for (const threshold of options.passes ?? DEFAULT_PASSES) passes.push(await engine.recognize(image, { psm: "11", threshold }))
+  const first = { words: passes.map((p) => p.words).reduce(mergeWords), lines: passes.flatMap((p) => p.lines) }
   const columns = findDayColumns(first.words)
   if (!columns)
     throw new ScheduleReadError(
       "We couldn’t find the day headers (Pzt, Sal, Çar, Per, Cum). Make sure the whole timetable is in the screenshot.",
     )
-  const codes = findCodes(first.words).filter((c) => c.y > columns.headerBottom)
+  const everything = passes.flatMap((p) => [...p.words, ...p.lines])
+  const bounds = { x: Math.max(...everything.map((b) => b.x1)), y: Math.max(...everything.map((b) => b.y1)) }
+  const orphans: OcrBox[] = []
+  const hits = passes.flatMap((p) => findCodes(p.words, orphans))
+
+  // Closer look at cells where a prefix was read but its number wasn't (e.g. a thin "1"
+  // dropped from "371"): re-read just that cell as a single line.
+  const seen: OcrBox[] = []
+  for (const o of orphans) {
+    const h = o.y1 - o.y0
+    if (o.y0 < columns.headerBottom || seen.some((s) => Math.abs(s.x0 - o.x0) < h && Math.abs(s.y0 - o.y0) < h)) continue
+    if (hits.some((c) => Math.abs(c.y - center(o).y) < h && Math.abs(c.x - (o.x0 + h * 2.4)) < h * 2.5)) continue
+    seen.push(o)
+    if (seen.length > 40) break
+    // Keep the crop inside the area OCR has seen — Tesseract fails on rectangles past the image edge.
+    const left = Math.max(0, Math.round(o.x0 - h * 0.6))
+    const top = Math.max(0, Math.round(o.y0 - h * 0.7))
+    const rect = {
+      left,
+      top,
+      width: Math.min(Math.round(h * 7.5), Math.floor(bounds.x - left)),
+      height: Math.min(Math.round(h * 2.4), Math.floor(bounds.y - top)),
+    }
+    if (h < 10 || rect.width < Math.max(40, h * 2) || rect.height < Math.max(20, h)) continue
+    const cell = await engine.recognize(image, { psm: "7", rect, threshold: "global", whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZÇĞİÖŞÜ0123456789 " })
+    const line = cell.lines.find((l) => /\d/.test(l.text))
+    const m = line?.text.replace(/\s+/g, " ").match(/([A-ZÇĞİÖŞÜ]{2,5}) ?(\d{3}[A-Z]?)\b/)
+    if (m && line) hits.push({ code: `${m[1]} ${m[2]}`, x: (o.x0 + line.x1) / 2, y: center(o).y, h, conf: line.confidence })
+  }
+
+  const codes = snapCodes(hits).filter((c) => c.y > columns.headerBottom)
   if (!codes.length)
     throw new ScheduleReadError("We found the timetable but no course codes in it. Try a sharper screenshot.")
 
@@ -214,7 +317,7 @@ export async function readSchedule(engine: OcrEngine, image: unknown): Promise<S
     width: Math.max(40, Math.round(stripRight)),
     height: Math.max(40, Math.round(maxY - columns.headerBottom)),
   }
-  const timeCol = await engine.recognize(image, { psm: "6", rect, whitelist: "0123456789-" })
+  const timeCol = await engine.recognize(image, { psm: "6", rect, whitelist: "0123456789-", threshold: "sauvola" })
   // Tesseract reports rectangle results in full-image coordinates already.
   const rows = fitHourRows(timeCol.lines, { left: 0, top: 0 })
   let hourAt: (y: number) => number

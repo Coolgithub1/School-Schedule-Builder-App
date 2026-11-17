@@ -13,8 +13,10 @@ import { readSchedule } from "../src/lib/scheduleOcr.ts"
 
 const root = path.resolve(import.meta.dirname, "..")
 const args = process.argv.slice(2)
-const expectIdx = args.indexOf("--expect")
-const cliExpect = expectIdx >= 0 ? args.splice(expectIdx, 2)[1].split(",").map((s) => s.trim()) : null
+const expectIdx = () => args.indexOf("--expect")
+const passIdx = args.indexOf("--passes")
+const passes = passIdx >= 0 ? args.splice(passIdx, 2)[1].split(",") : undefined
+const cliExpect = expectIdx() >= 0 ? args.splice(expectIdx(), 2)[1].split(",").map((s) => s.trim()) : null
 const jobs = args.length
   ? args.map((file) => ({ file, expect: cliExpect }))
   : JSON.parse(fs.readFileSync(path.join(root, "test/fixtures/fixtures.json"), "utf8")).map((f) => ({
@@ -43,8 +45,12 @@ const flatten = (data) => {
 }
 
 const engine = {
-  async recognize(image, { psm, rect, whitelist }) {
-    await worker.setParameters({ tessedit_pageseg_mode: psm, tessedit_char_whitelist: whitelist ?? "" })
+  async recognize(image, { psm, rect, whitelist, threshold }) {
+    await worker.setParameters({
+      tessedit_pageseg_mode: psm,
+      tessedit_char_whitelist: whitelist ?? "",
+      thresholding_method: { global: "0", "local-otsu": "1", sauvola: "2" }[threshold ?? "global"],
+    })
     const { data } = await worker.recognize(image, rect ? { rectangle: rect } : {}, { blocks: true })
     return flatten(data)
   },
@@ -55,7 +61,7 @@ for (const { file, expect: expected } of jobs) {
   const started = Date.now()
   console.log(`\n▶ ${file}`)
   try {
-    const result = await readSchedule(engine, path.resolve(file))
+    const result = await readSchedule(engine, path.resolve(file), { passes })
     for (const c of result.classes)
       console.log(`  ${c.name.padEnd(9)} ${c.days.map((d) => DAYS[d]).join(", ").padEnd(14)} ${c.start}:00–${c.start + c.duration}:00`)
     console.log(`  → ${result.classes.length} classes, ${result.hoursPerWeek} hrs/week in ${((Date.now() - started) / 1000).toFixed(1)}s`)
