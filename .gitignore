@@ -5,3 +5,4 @@ dist
 .vite
 ocr-samples
 public/ocr
+*.tsbuildinfo
