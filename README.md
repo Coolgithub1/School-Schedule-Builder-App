@@ -6,6 +6,10 @@ A weekly planner for students: add your classes, set a study-hours goal and your
 
 **Case study presentation (PDF):** [Download studyflow-case-study.pdf](https://github.com/Coolgithub1/School-Schedule-Builder-App/releases/download/case-study-v1/studyflow-case-study.pdf) — UI/UX case study with personas, user flow, before/after user testing, and the design system.
 
+**Figma wireframe board:** [studyflow — Wireframe prototype](https://www.figma.com/design/oUxlwuU0uSRaPHtQQ9j0IW/studyflow-%E2%80%94-Wireframe-prototype?node-id=0-1&t=Hcrr8lLBTFI7setb-1)
+
+**Figma prototype:** [School Schedule Builder App (Figma Make)](https://www.figma.com/make/xNpQLGBq0cOlTiwxspd4nJ/School-Schedule-Builder-App?t=RrSOYabn4f7Uehex-1)
+
 ## Features
 
 - **Screenshot import:** upload a screenshot of your Yeditepe timetable (Program tab) and your classes are filled in automatically — read on-device, the image never leaves your phone
