@@ -4,6 +4,8 @@ A weekly planner for students: add your classes, set a study-hours goal and your
 
 **Live app:** https://coolgithub1.github.io/School-Schedule-Builder-App/
 
+**Case study presentation (PDF):** [Download studyflow-case-study.pdf](https://github.com/Coolgithub1/School-Schedule-Builder-App/releases/download/case-study-v1/studyflow-case-study.pdf) — UI/UX case study with personas, user flow, before/after user testing, and the design system.
+
 ## Features
 
 - **Screenshot import:** upload a screenshot of your Yeditepe timetable (Program tab) and your classes are filled in automatically — read on-device, the image never leaves your phone
